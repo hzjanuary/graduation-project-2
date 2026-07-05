@@ -1,0 +1,13 @@
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.env
+.env.*
+!.env.example
+app/tests/
+Dockerfile

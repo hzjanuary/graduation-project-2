@@ -30,6 +30,20 @@ The OpenAPI documentation will be available at:
 http://127.0.0.1:8000/docs
 ```
 
+## Health Endpoints
+
+The backend exposes lightweight service endpoints:
+
+```text
+GET /       service metadata and endpoint links
+GET /health overall application health
+GET /ready  readiness with lightweight placeholder checks
+GET /live   liveness status
+```
+
+Readiness does not perform database, Redis, Qdrant, or MinIO checks yet. Those
+clients are introduced by later SPEC-001 tasks.
+
 ## Settings
 
 Application settings live in `app/config/settings.py` and are loaded with
@@ -58,6 +72,35 @@ LOG_LEVEL=DEBUG
 ```
 
 Do not commit real API keys, database credentials, or object storage secrets.
+
+## Docker
+
+Build and run the backend plus Phase 1 infrastructure services from the
+repository root:
+
+```bash
+docker compose config
+docker compose up --build backend
+```
+
+The Compose stack includes:
+
+```text
+backend   FastAPI API on http://localhost:8000
+postgres  PostgreSQL on localhost:5432
+redis     Redis on localhost:6379
+qdrant    Qdrant on http://localhost:6333
+minio     MinIO API on http://localhost:9000 and console on http://localhost:9001
+```
+
+After the backend starts, verify:
+
+```bash
+curl http://localhost:8000/health
+```
+
+The Docker Compose file uses development defaults only. Do not reuse demo
+passwords or API keys for production deployments.
 
 ## Logging And Middleware
 

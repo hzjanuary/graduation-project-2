@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
+from app.api.v1 import health_router
 from app.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.exceptions import register_exception_handlers
@@ -26,6 +27,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_exception_handlers(app)
     configure_middleware(app, app_settings)
+    app.include_router(health_router)
 
     return app
 
