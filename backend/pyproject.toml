@@ -1,0 +1,47 @@
+[tool.poetry]
+name = "enterprise-multi-agent-os-backend"
+version = "0.1.0"
+description = "FastAPI backend for Enterprise Multi-Agent OS."
+authors = ["Enterprise Multi-Agent OS"]
+readme = "README.md"
+packages = [{ include = "app" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = ">=0.115.0,<1.0.0"
+uvicorn = { extras = ["standard"], version = ">=0.30.0,<1.0.0" }
+pydantic = ">=2.8.0,<3.0.0"
+pydantic-settings = ">=2.4.0,<3.0.0"
+structlog = ">=24.1.0,<26.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.2.0,<9.0.0"
+pytest-asyncio = ">=0.23.0,<1.0.0"
+httpx = ">=0.27.0,<1.0.0"
+ruff = ">=0.6.0,<1.0.0"
+black = ">=24.4.0,<26.0.0"
+mypy = ">=1.10.0,<2.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.black]
+target-version = ["py312"]
+line-length = 88
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["app"]
