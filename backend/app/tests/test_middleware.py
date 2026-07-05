@@ -9,7 +9,7 @@ from app.middleware import REQUEST_ID_HEADER
 
 
 def build_test_app() -> FastAPI:
-    app = create_app(Settings(_env_file=None))
+    app = create_app(Settings())
 
     @app.get("/ok")
     async def ok() -> dict[str, bool]:

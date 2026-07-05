@@ -6,7 +6,7 @@ import structlog
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.middleware.request_id import get_request_id
+from app.middleware.request_id import REQUEST_ID_HEADER, get_request_id
 
 logger = structlog.get_logger(__name__)
 
@@ -40,6 +40,7 @@ async def unhandled_exception_handler(
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=content,
+        headers={REQUEST_ID_HEADER: request_id} if request_id else None,
     )
 
 

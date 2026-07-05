@@ -9,5 +9,4 @@ __pycache__/
 .env
 .env.*
 !.env.example
-app/tests/
 Dockerfile

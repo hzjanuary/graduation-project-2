@@ -1,6 +1,7 @@
 """Health and service information routes."""
 
 from datetime import UTC, datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
@@ -9,6 +10,7 @@ from app.core.dependencies import provide_settings
 from app.schemas import HealthResponse, LiveResponse, ReadyResponse, RootResponse
 
 API_VERSION = "0.1.0"
+SettingsDependency = Annotated[Settings, Depends(provide_settings)]
 
 router = APIRouter(tags=["health"])
 
@@ -19,7 +21,7 @@ def utc_now() -> datetime:
 
 
 @router.get("/", response_model=RootResponse)
-async def root(settings: Settings = Depends(provide_settings)) -> RootResponse:
+async def root(settings: SettingsDependency) -> RootResponse:
     """Return basic service information."""
     return RootResponse(
         app_name=settings.app_name,
@@ -31,7 +33,7 @@ async def root(settings: Settings = Depends(provide_settings)) -> RootResponse:
 
 
 @router.get("/health", response_model=HealthResponse)
-async def health(settings: Settings = Depends(provide_settings)) -> HealthResponse:
+async def health(settings: SettingsDependency) -> HealthResponse:
     """Return overall service health."""
     return HealthResponse(
         status="ok",

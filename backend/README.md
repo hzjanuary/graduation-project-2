@@ -2,10 +2,11 @@
 
 FastAPI backend foundation for Enterprise Multi-Agent OS.
 
-This skeleton belongs to `SPEC-001` / `TASK 001.1` and intentionally contains
-only the base project structure. Database models, authentication, workflow
-runtime, agents, storage clients, health endpoints, and Docker setup are
-implemented by later tasks.
+This backend belongs to `SPEC-001` and intentionally contains only the
+foundation layer: project structure, settings, logging, middleware, health
+endpoints, Docker support, and a reproducible Docker-based quality gate.
+Database models, authentication, workflow runtime, agents, storage clients, and
+business modules are intentionally out of scope for this SPEC.
 
 ## Requirements
 
@@ -79,8 +80,8 @@ Build and run the backend plus Phase 1 infrastructure services from the
 repository root:
 
 ```bash
-docker compose config
-docker compose up --build backend
+docker-compose config
+docker-compose up --build backend
 ```
 
 The Compose stack includes:
@@ -118,9 +119,15 @@ passwords or API keys for production deployments.
 
 ## Test And Check
 
+Run the reproducible Python 3.12 Docker quality gate from the repository root:
+
 ```bash
-poetry run pytest
-poetry run ruff check .
-poetry run black --check .
-poetry run mypy app
+docker-compose run --rm backend-test pytest
+docker-compose run --rm backend-test ruff check .
+docker-compose run --rm backend-test black --check .
+docker-compose run --rm backend-test mypy app
 ```
+
+The `backend` image installs only runtime dependencies. The `backend-test`
+service uses the Dockerfile `dev` target and installs development dependencies
+for validation.

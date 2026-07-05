@@ -10,7 +10,7 @@ from app.middleware import REQUEST_ID_HEADER
 
 
 def build_client() -> TestClient:
-    settings = Settings(_env_file=None)
+    settings = Settings()
     return TestClient(create_app(settings))
 
 

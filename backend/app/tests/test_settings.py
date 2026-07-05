@@ -6,7 +6,7 @@ from app.config import AppEnvironment, Settings
 
 
 def test_settings_load_default_development_values() -> None:
-    settings = Settings(_env_file=None)
+    settings = Settings()
 
     assert settings.app_name == "Enterprise Multi-Agent OS"
     assert settings.app_env is AppEnvironment.DEVELOPMENT
@@ -43,7 +43,7 @@ def test_settings_can_be_overridden_by_environment(
     monkeypatch.setenv("GEMINI_API_KEY", "gemini-key")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://ollama:11434")
 
-    settings = Settings(_env_file=None)
+    settings = Settings()
 
     assert settings.app_name == "Settings Override"
     assert settings.app_env is AppEnvironment.PRODUCTION
@@ -72,7 +72,7 @@ def test_testing_environment_can_be_configured(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setenv("APP_ENV", "testing")
     monkeypatch.setenv("DEBUG", "false")
 
-    settings = Settings(_env_file=None)
+    settings = Settings()
 
     assert settings.app_env is AppEnvironment.TESTING
     assert settings.debug is False

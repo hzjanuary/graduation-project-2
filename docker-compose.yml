@@ -3,6 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: runtime
     container_name: enterprise-os-backend
     environment:
       APP_NAME: "Enterprise Multi-Agent OS"
@@ -41,6 +42,13 @@ services:
       retries: 3
       start_period: 20s
     restart: unless-stopped
+
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    command: ["pytest"]
 
   postgres:
     image: postgres:16-alpine

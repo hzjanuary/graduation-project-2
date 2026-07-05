@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -11,9 +11,19 @@ WORKDIR /app
 RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
 
 COPY pyproject.toml poetry.lock* ./
+
+FROM base AS dev
+
+RUN poetry install --with dev --no-root
+
+COPY app ./app
+
+FROM base AS runtime
+
 RUN poetry install --only main --no-root
 
 COPY app ./app
+RUN rm -rf app/tests
 
 EXPOSE 8000
 
