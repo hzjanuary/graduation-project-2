@@ -17,6 +17,8 @@ FROM base AS dev
 RUN poetry install --with dev --no-root
 
 COPY app ./app
+COPY alembic.ini ./
+COPY alembic ./alembic
 
 FROM base AS runtime
 

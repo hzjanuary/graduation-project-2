@@ -48,6 +48,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: dev
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/enterprise_os
     command: ["pytest"]
 
   postgres:

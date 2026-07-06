@@ -2,11 +2,12 @@
 
 FastAPI backend foundation for Enterprise Multi-Agent OS.
 
-This backend belongs to `SPEC-001` and intentionally contains only the
-foundation layer: project structure, settings, logging, middleware, health
-endpoints, Docker support, and a reproducible Docker-based quality gate.
-Database models, authentication, workflow runtime, agents, storage clients, and
-business modules are intentionally out of scope for this SPEC.
+This backend contains the foundation layer for Enterprise Multi-Agent OS:
+project structure, settings, logging, middleware, health endpoints, Docker
+support, a reproducible Docker-based quality gate, and the SPEC-002 database
+foundation. Authentication, workflow runtime, agents, storage clients, and
+business modules are intentionally out of scope for the current backend
+foundation.
 
 ## Requirements
 
@@ -43,7 +44,65 @@ GET /live   liveness status
 ```
 
 Readiness does not perform database, Redis, Qdrant, or MinIO checks yet. Those
-clients are introduced by later SPEC-001 tasks.
+clients are introduced by later implementation tasks.
+
+## Database
+
+The async SQLAlchemy foundation lives in `app/db/session.py`.
+
+It provides:
+
+```text
+create_database_engine()  builds an AsyncEngine from DATABASE_URL
+create_session_factory()  builds an async_sessionmaker[AsyncSession]
+provide_db_session()      FastAPI dependency for request-scoped sessions
+```
+
+`DATABASE_URL` is loaded from the typed settings model. This foundation prepares
+the async engine/session layer; repositories are introduced by later SPEC-002
+tasks.
+
+The declarative model base and shared mixins live in:
+
+```text
+app/db/base.py    DeclarativeBase with Alembic-friendly naming conventions
+app/db/mixins.py  UUID primary key, timestamp, and soft-delete mixins
+```
+
+Models should inherit from `Base` and the relevant mixins. Repositories and
+business services are intentionally deferred to later SPEC-002 tasks.
+
+Phase 1 core models are registered through `app/models/__init__.py` so
+`Base.metadata` can discover:
+
+```text
+users
+roles
+user_roles
+workflows
+workflow_events
+audit_logs
+```
+
+The model layer defines table shape and relationships only. Authentication
+services and workflow runtime behavior are separate tasks.
+
+Alembic is configured for async SQLAlchemy in:
+
+```text
+alembic.ini
+alembic/env.py
+alembic/versions/0001_create_phase_1_core_tables.py
+```
+
+Run migrations through the Docker test environment from the repository root:
+
+```bash
+docker-compose up -d postgres
+docker-compose run --rm backend-test alembic upgrade head
+docker-compose run --rm backend-test alembic current
+docker-compose run --rm backend-test alembic downgrade base
+```
 
 ## Settings
 
