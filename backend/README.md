@@ -229,6 +229,38 @@ The cache layer is interface-only at this stage. Redis client behavior,
 distributed locks, queues, workflow state, Qdrant, MinIO, document indexing, and
 RAG are deferred to later SPEC-004 tasks.
 
+Redis-backed cache support lives in `app/cache/redis.py`.
+
+```text
+RedisCacheProvider.from_url()      creates a provider from a Redis URL
+create_redis_cache_provider()      creates a provider from REDIS_URL settings
+RedisCacheProvider.health_check()  verifies Redis responds to ping
+```
+
+`RedisCacheProvider` implements the `CacheProvider` contract with async Redis
+operations for string values, optional TTL on `set`, `expire`, `exists`,
+`delete`, and `close`. Redis operation failures are wrapped as cache operation
+errors. The provider does not implement workflow state, distributed locks,
+queues, or token blacklists.
+
+Vector store provider interfaces live in `app/vectorstore`.
+
+```text
+VectorPoint                 vector id, float vector, and payload metadata
+VectorSearchResult          result id, score, and payload metadata
+VectorStore.create_collection()
+VectorStore.collection_exists()
+VectorStore.upsert()
+VectorStore.search()
+VectorStore.delete()
+VectorStore.close()
+```
+
+The vector store layer is interface-only at this stage. Qdrant client behavior,
+embeddings, document chunking, document indexing, RAG, hybrid search, Retrieval
+Agent logic, LangGraph, agents, MinIO, and frontend work are deferred to later
+tasks.
+
 ## Docker
 
 Build and run the backend plus Phase 1 infrastructure services from the
