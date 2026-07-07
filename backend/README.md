@@ -212,6 +212,23 @@ return `403`. Role comparison is case-sensitive. This layer does not implement
 role assignment APIs, user management APIs, registration, permission tables, or
 fine-grained permissions.
 
+## Storage Interfaces
+
+Cache provider interfaces live in `app/cache`.
+
+```text
+CacheProvider.get()     reads a string value by key
+CacheProvider.set()     stores a string value with an optional TTL
+CacheProvider.delete()  removes a key if present
+CacheProvider.exists()  checks key presence
+CacheProvider.expire()  applies or replaces a TTL
+CacheProvider.close()   releases provider resources
+```
+
+The cache layer is interface-only at this stage. Redis client behavior,
+distributed locks, queues, workflow state, Qdrant, MinIO, document indexing, and
+RAG are deferred to later SPEC-004 tasks.
+
 ## Docker
 
 Build and run the backend plus Phase 1 infrastructure services from the
