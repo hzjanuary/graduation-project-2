@@ -14,6 +14,10 @@ def test_settings_load_default_development_values() -> None:
     assert settings.api_v1_prefix == "/api/v1"
     assert settings.backend_cors_origins == ("http://localhost:3000",)
     assert settings.log_level == "INFO"
+    assert settings.jwt_secret_key == "development-only-change-me-32-bytes-minimum"
+    assert settings.jwt_algorithm == "HS256"
+    assert settings.access_token_expire_minutes == 30
+    assert settings.refresh_token_expire_days == 7
     assert settings.llm_provider == "ollama"
     assert settings.ollama_base_url == "http://localhost:11434"
 
@@ -37,6 +41,10 @@ def test_settings_can_be_overridden_by_environment(
     monkeypatch.setenv("MINIO_ACCESS_KEY", "access")
     monkeypatch.setenv("MINIO_SECRET_KEY", "secret")
     monkeypatch.setenv("MINIO_BUCKET_NAME", "quotes")
+    monkeypatch.setenv("JWT_SECRET_KEY", "jwt-secret")
+    monkeypatch.setenv("JWT_ALGORITHM", "HS256")
+    monkeypatch.setenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15")
+    monkeypatch.setenv("REFRESH_TOKEN_EXPIRE_DAYS", "14")
     monkeypatch.setenv("LLM_PROVIDER", "GROQ")
     monkeypatch.setenv("GROQ_API_KEY", "groq-key")
     monkeypatch.setenv("OPENROUTER_API_KEY", "openrouter-key")
@@ -61,6 +69,10 @@ def test_settings_can_be_overridden_by_environment(
     assert settings.minio_access_key == "access"
     assert settings.minio_secret_key == "secret"
     assert settings.minio_bucket_name == "quotes"
+    assert settings.jwt_secret_key == "jwt-secret"
+    assert settings.jwt_algorithm == "HS256"
+    assert settings.access_token_expire_minutes == 15
+    assert settings.refresh_token_expire_days == 14
     assert settings.llm_provider == "groq"
     assert settings.groq_api_key == "groq-key"
     assert settings.openrouter_api_key == "openrouter-key"

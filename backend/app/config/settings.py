@@ -57,6 +57,20 @@ class Settings(BaseSettings):
         alias="MINIO_BUCKET_NAME",
     )
 
+    jwt_secret_key: str = Field(
+        default="development-only-change-me-32-bytes-minimum",
+        alias="JWT_SECRET_KEY",
+    )
+    jwt_algorithm: Literal["HS256"] = Field(default="HS256", alias="JWT_ALGORITHM")
+    access_token_expire_minutes: int = Field(
+        default=30,
+        alias="ACCESS_TOKEN_EXPIRE_MINUTES",
+    )
+    refresh_token_expire_days: int = Field(
+        default=7,
+        alias="REFRESH_TOKEN_EXPIRE_DAYS",
+    )
+
     llm_provider: Literal["groq", "openrouter", "ollama", "gemini"] = Field(
         default="ollama",
         alias="LLM_PROVIDER",

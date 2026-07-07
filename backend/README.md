@@ -144,6 +144,72 @@ LOG_LEVEL=DEBUG
 
 Do not commit real API keys, database credentials, or object storage secrets.
 
+## Authentication Utilities
+
+Password hashing utilities live in `app/auth/password.py`.
+
+```text
+hash_password()            hashes plain-text passwords with Argon2
+verify_password()          verifies plain text against an Argon2 hash
+password_needs_rehash()    reports whether an Argon2 hash should be refreshed
+```
+
+The password utility layer does not implement login, JWT, refresh tokens, RBAC,
+registration, seed users, or auth API endpoints.
+
+JWT token utilities live in `app/auth/tokens.py`.
+
+```text
+create_access_token()   signs an access token with sub, token_type, iat, exp
+create_refresh_token()  signs a refresh token with sub, token_type, iat, exp
+decode_token()          validates signature, expiration, and token type
+verify_token()          returns a payload or None for invalid tokens
+```
+
+JWT settings are loaded from environment variables:
+
+```text
+JWT_SECRET_KEY
+JWT_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS
+```
+
+The default JWT secret is for local development only. Production deployments
+must provide a strong secret through environment configuration. The token
+utility layer does not implement login, refresh, logout, current-user
+dependencies, RBAC, registration, seed users, or auth API endpoints.
+
+Auth API routes are mounted under `/api/v1/auth`:
+
+```text
+POST /api/v1/auth/login    returns access and refresh tokens
+POST /api/v1/auth/refresh  returns a new token pair from a refresh token
+POST /api/v1/auth/logout   stateless MVP logout success response
+GET  /api/v1/auth/me       returns the current safe user profile
+```
+
+The Auth API uses the existing `User` model, Argon2 password verification, JWT
+token utilities, and request-scoped `AsyncSession` dependency. It does not
+return `hashed_password` in responses. Logout is stateless for now; server-side
+token revocation can be added later with Redis-backed storage.
+
+RBAC dependency utilities live in `app/auth/rbac.py`.
+
+```text
+RoleName             supported role names: Admin, Manager, Sales, Legal, Finance, Viewer
+get_user_role_names  returns case-sensitive role names assigned to a user
+require_any_role     allows users with any listed role
+require_all_roles    allows users with every listed role
+require_admin        convenience dependency for Admin-only access
+```
+
+RBAC dependencies build on the existing current-user dependency. Missing or
+invalid credentials return `401`; authenticated users without required roles
+return `403`. Role comparison is case-sensitive. This layer does not implement
+role assignment APIs, user management APIs, registration, permission tables, or
+fine-grained permissions.
+
 ## Docker
 
 Build and run the backend plus Phase 1 infrastructure services from the
