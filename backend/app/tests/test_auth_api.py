@@ -1,6 +1,7 @@
 """Integration tests for authentication API endpoints."""
 
 from collections.abc import AsyncIterator
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -172,6 +173,16 @@ async def test_refresh_rejects_access_token(
 
 
 @pytest.mark.asyncio
+async def test_refresh_rejects_invalid_token(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": "not-a-valid-token"},
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_me_returns_safe_user_profile(
     client: AsyncClient,
     db_session: AsyncSession,
@@ -247,3 +258,50 @@ async def test_logout_returns_success(client: AsyncClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == {"success": True}
+
+
+@pytest.mark.asyncio
+async def test_login_does_not_log_plain_text_password(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = await create_test_user(db_session)
+    logged_events: list[dict[str, Any]] = []
+
+    def capture_log(event: str, **kwargs: Any) -> None:
+        logged_events.append({"event": event, **kwargs})
+
+    monkeypatch.setattr("app.middleware.logging.logger.info", capture_log)
+
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "correct-password"},
+    )
+
+    assert response.status_code == 200
+    assert "correct-password" not in str(logged_events)
+
+
+@pytest.mark.asyncio
+async def test_me_does_not_log_bearer_token(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = await create_test_user(db_session)
+    access_token = create_access_token(str(user.id))
+    logged_events: list[dict[str, Any]] = []
+
+    def capture_log(event: str, **kwargs: Any) -> None:
+        logged_events.append({"event": event, **kwargs})
+
+    monkeypatch.setattr("app.middleware.logging.logger.info", capture_log)
+
+    response = await client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == 200
+    assert access_token not in str(logged_events)

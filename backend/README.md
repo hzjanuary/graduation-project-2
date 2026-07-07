@@ -4,10 +4,10 @@ FastAPI backend foundation for Enterprise Multi-Agent OS.
 
 This backend contains the foundation layer for Enterprise Multi-Agent OS:
 project structure, settings, logging, middleware, health endpoints, Docker
-support, a reproducible Docker-based quality gate, and the SPEC-002 database
-foundation. Authentication, workflow runtime, agents, storage clients, and
-business modules are intentionally out of scope for the current backend
-foundation.
+support, a reproducible Docker-based quality gate, the SPEC-002 database
+foundation, and SPEC-003 authentication/RBAC foundation. Workflow runtime,
+agents, storage clients, and business modules are intentionally out of scope for
+the current backend foundation.
 
 ## Requirements
 
@@ -154,8 +154,9 @@ verify_password()          verifies plain text against an Argon2 hash
 password_needs_rehash()    reports whether an Argon2 hash should be refreshed
 ```
 
-The password utility layer does not implement login, JWT, refresh tokens, RBAC,
-registration, seed users, or auth API endpoints.
+The password utility layer is intentionally narrow. It does not log plain-text
+passwords, create users, implement registration, or expose API endpoints by
+itself.
 
 JWT token utilities live in `app/auth/tokens.py`.
 
@@ -177,8 +178,8 @@ REFRESH_TOKEN_EXPIRE_DAYS
 
 The default JWT secret is for local development only. Production deployments
 must provide a strong secret through environment configuration. The token
-utility layer does not implement login, refresh, logout, current-user
-dependencies, RBAC, registration, seed users, or auth API endpoints.
+utility layer does not log tokens, create users, implement registration, or
+expose API endpoints by itself.
 
 Auth API routes are mounted under `/api/v1/auth`:
 
@@ -190,9 +191,10 @@ GET  /api/v1/auth/me       returns the current safe user profile
 ```
 
 The Auth API uses the existing `User` model, Argon2 password verification, JWT
-token utilities, and request-scoped `AsyncSession` dependency. It does not
-return `hashed_password` in responses. Logout is stateless for now; server-side
-token revocation can be added later with Redis-backed storage.
+token utilities, and request-scoped `AsyncSession` dependency. It does not log
+plain-text passwords or tokens, and it does not return `hashed_password` in
+responses. Logout is stateless for now; server-side token revocation can be
+added later with Redis-backed storage.
 
 RBAC dependency utilities live in `app/auth/rbac.py`.
 
