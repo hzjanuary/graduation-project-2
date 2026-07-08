@@ -309,6 +309,36 @@ errors. The provider does not implement document management APIs, document
 metadata persistence, indexing, RAG, Retrieval Agent logic, generated files,
 email attachments, LangGraph, agents, or frontend behavior.
 
+## Workflow State Foundation
+
+Workflow state schemas and lifecycle metadata live in `app/workflows`.
+
+```text
+WorkflowState             typed state envelope aligned with SPEC-005
+WorkflowStateCreate       initial state creation payload
+WorkflowStepState         generic per-step status/output/error shape
+WorkflowError             structured workflow error details
+WorkflowType              supported workflow type values
+workflow_status_values()  approved WorkflowStatus values
+is_terminal_status()      terminal status helper
+get_allowed_transitions() allowed next statuses for a status
+can_transition()          boolean transition check
+validate_transition()     raises for invalid transitions
+WorkflowService           async service for create/read/list/status/state updates
+WorkflowRepository        database access helper for Workflow records
+```
+
+The workflow package reuses the existing `WorkflowStatus` enum from
+`app.models.enums` so schema status values stay aligned with persisted workflow
+records. Transition rules are pure helpers based on the SPEC-005 lifecycle.
+`WorkflowService` uses caller-owned `AsyncSession` instances and the
+`WorkflowRepository` to create, read, list, transition, and update persisted
+workflow state envelopes. The service flushes changes but does not commit
+transactions; callers own transaction boundaries. This foundation does not
+append workflow events, write audit logs, implement API routes, create
+migrations, run LangGraph, execute Agents, call LLM providers, perform RAG or
+document indexing, generate email, or implement frontend behavior.
+
 ## Docker
 
 Build and run the backend plus Phase 1 infrastructure services from the
