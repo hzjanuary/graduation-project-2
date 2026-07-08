@@ -5,9 +5,10 @@ FastAPI backend foundation for Enterprise Multi-Agent OS.
 This backend contains the foundation layer for Enterprise Multi-Agent OS:
 project structure, settings, logging, middleware, health endpoints, Docker
 support, a reproducible Docker-based quality gate, the SPEC-002 database
-foundation, and SPEC-003 authentication/RBAC foundation. Workflow runtime,
-agents, storage clients, and business modules are intentionally out of scope for
-the current backend foundation.
+foundation, SPEC-003 authentication/RBAC foundation, and SPEC-004 storage
+provider foundations. Workflow runtime, agents, document management APIs, and
+business modules are intentionally out of scope for the current backend
+foundation.
 
 ## Requirements
 
@@ -276,6 +277,37 @@ collections and supports simple exact-match payload filters. Qdrant operation
 failures are wrapped as vector store operation errors. The provider does not
 implement embeddings, chunking, indexing, RAG, hybrid search, Retrieval Agent
 logic, LangGraph, agents, MinIO, or frontend behavior.
+
+Object storage provider interfaces live in `app/storage`.
+
+```text
+StoredObject                         object bucket, name, size, content type, etag
+ObjectStorageProvider.bucket_exists()
+ObjectStorageProvider.create_bucket()
+ObjectStorageProvider.upload_bytes()
+ObjectStorageProvider.download_bytes()
+ObjectStorageProvider.delete_object()
+ObjectStorageProvider.object_exists()
+ObjectStorageProvider.close()
+```
+
+MinIO-backed object storage support lives in `app/storage/minio.py`.
+
+```text
+MinIOStorageProvider.from_settings()  creates a provider from MinIO settings
+create_minio_storage_provider()       creates a provider from configured settings
+MinIOStorageProvider.health_check()   verifies MinIO responds
+```
+
+`MinIOStorageProvider` implements the `ObjectStorageProvider` contract with
+async wrapper methods around the MinIO SDK for bucket existence checks, bucket
+creation, byte upload, byte download, object existence checks, object deletion,
+and close. Each object operation receives an explicit bucket name; the configured
+`MINIO_BUCKET_NAME` is used as the default health-check target and factory
+configuration. MinIO operation failures are wrapped as object storage operation
+errors. The provider does not implement document management APIs, document
+metadata persistence, indexing, RAG, Retrieval Agent logic, generated files,
+email attachments, LangGraph, agents, or frontend behavior.
 
 ## Docker
 
