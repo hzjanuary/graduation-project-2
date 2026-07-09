@@ -326,6 +326,12 @@ can_transition()          boolean transition check
 validate_transition()     raises for invalid transitions
 WorkflowService           async service for create/read/list/status/state updates
 WorkflowRepository        database access helper for Workflow records
+WorkflowEventCreate       typed payload for appending workflow events
+WorkflowEventRead         typed read schema for persisted workflow events
+WorkflowEventService      async service for event append/read behavior
+WorkflowEventRepository   database access helper for WorkflowEvent records
+WorkflowAuditLogger       service-level audit log helper
+AuditLogRepository        database access helper for AuditLog records
 ```
 
 The workflow package reuses the existing `WorkflowStatus` enum from
@@ -334,10 +340,19 @@ records. Transition rules are pure helpers based on the SPEC-005 lifecycle.
 `WorkflowService` uses caller-owned `AsyncSession` instances and the
 `WorkflowRepository` to create, read, list, transition, and update persisted
 workflow state envelopes. The service flushes changes but does not commit
-transactions; callers own transaction boundaries. This foundation does not
-append workflow events, write audit logs, implement API routes, create
-migrations, run LangGraph, execute Agents, call LLM providers, perform RAG or
-document indexing, generate email, or implement frontend behavior.
+transactions; callers own transaction boundaries. It writes bounded audit logs
+for workflow creation, valid status transitions, and state payload updates using
+the existing `AuditLog` model.
+
+Workflow event append/read behavior uses the existing `WorkflowEvent` model.
+`WorkflowEventService` verifies the workflow exists before appending an event,
+persists JSON-compatible payloads through the model `payload` field, and lists
+events by `created_at` then `id` for deterministic chronological order. It
+flushes changes but does not commit transactions. Appending an event also writes
+a bounded audit record with event metadata, not the full event payload. Audit
+query APIs, event streaming, workflow API routes, LangGraph runtime, Agents, LLM
+providers, RAG, document indexing, email generation, and frontend behavior
+remain deferred to later specs.
 
 ## Docker
 

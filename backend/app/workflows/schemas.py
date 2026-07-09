@@ -5,10 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import WorkflowStatus
+from app.models.enums import WorkflowEventStatus, WorkflowStatus
 
 
 class WorkflowType(StrEnum):
@@ -62,6 +63,29 @@ class WorkflowLifecycleInfo(BaseModel):
     statuses: tuple[WorkflowStatus, ...]
     initial_status: WorkflowStatus
     terminal_statuses: tuple[WorkflowStatus, ...]
+
+
+class WorkflowEventCreate(BaseModel):
+    """Input schema for appending a workflow event."""
+
+    model_config = ConfigDict(frozen=True)
+
+    workflow_id: UUID
+    event_type: str = Field(min_length=1, max_length=100)
+    actor_type: str | None = Field(default=None, min_length=1, max_length=100)
+    actor_id: UUID | None = None
+    agent_name: str | None = Field(default=None, min_length=1, max_length=100)
+    status: WorkflowEventStatus | None = None
+    message: str | None = Field(default=None, min_length=1)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class WorkflowEventRead(WorkflowEventCreate):
+    """Read schema for persisted workflow events."""
+
+    event_id: UUID
+    created_at: datetime
+    updated_at: datetime | None = None
 
 
 class WorkflowStateCreate(BaseModel):

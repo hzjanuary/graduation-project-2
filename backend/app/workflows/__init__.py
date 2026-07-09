@@ -1,7 +1,16 @@
 """Workflow state schema and lifecycle helpers."""
 
+from app.workflows.audit import (
+    WORKFLOW_CREATED_ACTION,
+    WORKFLOW_EVENT_APPENDED_ACTION,
+    WORKFLOW_STATE_UPDATED_ACTION,
+    WORKFLOW_STATUS_TRANSITIONED_ACTION,
+    WorkflowAuditLogger,
+)
+from app.workflows.events import WorkflowEventService
 from app.workflows.exceptions import (
     InvalidWorkflowTransitionError,
+    WorkflowEventNotFoundError,
     WorkflowLifecycleError,
     WorkflowNotFoundError,
     WorkflowStateMismatchError,
@@ -21,6 +30,8 @@ from app.workflows.lifecycle import (
 )
 from app.workflows.schemas import (
     WorkflowError,
+    WorkflowEventCreate,
+    WorkflowEventRead,
     WorkflowLifecycleInfo,
     WorkflowState,
     WorkflowStateCreate,
@@ -35,8 +46,17 @@ __all__ = [
     "INITIAL_WORKFLOW_STATUS",
     "TERMINAL_WORKFLOW_STATUSES",
     "WORKFLOW_STATUSES",
+    "WORKFLOW_CREATED_ACTION",
+    "WORKFLOW_EVENT_APPENDED_ACTION",
+    "WORKFLOW_STATE_UPDATED_ACTION",
+    "WORKFLOW_STATUS_TRANSITIONED_ACTION",
     "InvalidWorkflowTransitionError",
+    "WorkflowAuditLogger",
     "WorkflowError",
+    "WorkflowEventCreate",
+    "WorkflowEventNotFoundError",
+    "WorkflowEventRead",
+    "WorkflowEventService",
     "WorkflowLifecycleInfo",
     "WorkflowLifecycleError",
     "WorkflowNotFoundError",

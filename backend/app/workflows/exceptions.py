@@ -11,6 +11,10 @@ class WorkflowNotFoundError(WorkflowLifecycleError):
     """Raised when a workflow record cannot be found."""
 
 
+class WorkflowEventNotFoundError(WorkflowLifecycleError):
+    """Raised when a workflow event record cannot be found."""
+
+
 class WorkflowStateMismatchError(WorkflowLifecycleError):
     """Raised when provided state does not match the persisted workflow."""
 

@@ -7,73 +7,74 @@ Closed specs:
 - SPEC-001 Bootstrap Backend - Approved / Closed
 - SPEC-002 Database Foundation - Approved / Closed
 - SPEC-003 Authentication and RBAC - Approved / Closed
+- SPEC-004 Storage Infrastructure - Approved / Closed
 
 Current active spec:
 
-- SPEC-004 Storage Infrastructure
+- SPEC-005 Workflow State
 
-## Completed SPEC-004 Tasks
+## Completed SPEC-005 Tasks
 
-- TASK 004.1 CacheProvider Interface - Approved
-- TASK 004.2 Redis Client - Approved
-- TASK 004.3 VectorStore Interface - Approved
-- TASK 004.4 Qdrant Client - Approved
+- TASK 005.1 Workflow State Schemas and Lifecycle - Approved
+- TASK 005.2 Workflow Transition Rules - Approved
+- TASK 005.3 Workflow Service Foundation - Approved
+- TASK 005.4 Workflow Event Append/Read Service - Approved
+- TASK 005.5 Workflow Audit Integration - Approved
+- TASK 005.6 Workflow State Tests and Hardening - Implemented, awaiting review
 
 ## Next Task
 
-- TASK 004.5 ObjectStorageProvider and MinIO Client
+- SPEC-005 Final Review
 
 ## Current Quality Gate
 
+- `git status --short`
 - `docker-compose config`
-- `docker-compose up -d minio`
+- `docker-compose up -d postgres`
+- `docker-compose run --rm backend-test alembic upgrade head`
+- `docker-compose build backend-test`
 - `docker-compose run --rm backend-test pytest`
 - `docker-compose run --rm backend-test ruff check .`
 - `docker-compose run --rm backend-test black --check .`
 - `docker-compose run --rm backend-test mypy app`
 - `git diff --check`
 
-## Important Constraints For TASK 004.5
+## Important Constraints For SPEC-005 Final Review
 
-- Implement `ObjectStorageProvider` interface.
-- Implement `MinIOStorageProvider`.
-- Use existing MinIO settings:
-  - `MINIO_ENDPOINT`
-  - `MINIO_ACCESS_KEY`
-  - `MINIO_SECRET_KEY`
-  - `MINIO_BUCKET_NAME`
-- Do not implement document management APIs.
-- Do not implement document indexing.
-- Do not implement RAG.
-- Do not implement Retrieval Agent.
-- Do not implement LangGraph.
-- Do not implement agents.
-- Do not implement frontend.
-- Do not implement workflow logic.
-- Do not implement email attachments yet.
-- Do not implement PDF/Excel generation.
+- Review only; do not implement application code during final review.
+- Confirm Workflow API endpoints remain deferred to SPEC-007.
+- Confirm LangGraph runtime remains deferred to SPEC-006.
+- Confirm event streaming remains deferred to SPEC-008.
+- Confirm no agents, LLM providers, RAG, document indexing, email generation, or
+  frontend work has been implemented in SPEC-005.
 
 ## Known Warnings
 
-- Docker `config.json` access warning is non-blocking.
-- LF/CRLF README warnings are non-blocking.
-- Existing FastAPI/TestClient warning is non-blocking.
+- Existing FastAPI/TestClient StarletteDeprecationWarning is non-blocking.
+- LF/CRLF README and Python file warnings from `git diff --check` are
+  non-blocking when no whitespace errors are reported.
 
 ## Harness State
 
-- TASK 004.1 recorded and verified.
-- TASK 004.2 recorded and verified.
-- TASK 004.3 recorded and verified.
-- TASK 004.4 recorded and verified.
-- Next story should be TASK 004.5.
+- TASK 005.1 recorded and validated.
+- TASK 005.2 recorded and validated.
+- TASK 005.3 recorded and validated.
+- TASK 005.4 recorded and validated.
+- TASK 005.5 recorded and validated.
+- TASK 005.6 should be recorded after review of current changes.
 
 ## Files Likely Relevant For Next Task
 
-- `backend/app/config/settings.py`
-- `backend/.env.example`
-- `backend/pyproject.toml`
+- `.ai/specs/SPEC-005-workflow-state/spec.md`
+- `.ai/specs/SPEC-005-workflow-state/tasks.md`
+- `backend/app/workflows/`
+- `backend/app/repositories/workflows.py`
+- `backend/app/repositories/workflow_events.py`
+- `backend/app/repositories/audit_logs.py`
+- `backend/app/tests/test_workflow_state_schemas.py`
+- `backend/app/tests/test_workflow_transition_rules.py`
+- `backend/app/tests/test_workflow_service.py`
+- `backend/app/tests/test_workflow_event_service.py`
+- `backend/app/tests/test_workflow_audit_integration.py`
+- `backend/app/tests/test_workflow_state_hardening.py`
 - `backend/README.md`
-- `docker-compose.yml`
-- `backend/app/cache/`
-- `backend/app/vectorstore/`
-- `backend/app/tests/`

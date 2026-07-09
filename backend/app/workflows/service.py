@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Workflow
 from app.models.enums import WorkflowStatus
 from app.repositories.workflows import WorkflowRepository
+from app.workflows.audit import WorkflowAuditLogger
 from app.workflows.exceptions import WorkflowNotFoundError, WorkflowStateMismatchError
 from app.workflows.lifecycle import validate_transition
 from app.workflows.schemas import WorkflowState, WorkflowStateCreate
@@ -18,6 +19,7 @@ class WorkflowService:
 
     def __init__(self, session: AsyncSession) -> None:
         self.workflow_repository = WorkflowRepository(session)
+        self.workflow_audit_logger = WorkflowAuditLogger(session)
 
     async def create_workflow(
         self,
@@ -35,6 +37,12 @@ class WorkflowService:
             state_payload={},
         )
         await self.workflow_repository.session.flush()
+        self.workflow_audit_logger.audit_workflow_created(
+            workflow_id=workflow.id,
+            workflow_type=workflow.workflow_type,
+            domain=workflow.domain,
+            actor_user_id=created_by_id,
+        )
 
         workflow_state = self._workflow_to_state(workflow)
         self.workflow_repository.update_state_payload(
@@ -72,13 +80,26 @@ class WorkflowService:
         self,
         workflow_id: UUID,
         to_status: WorkflowStatus,
+        *,
+        actor_type: str | None = None,
+        actor_id: UUID | None = None,
+        reason: str | None = None,
     ) -> WorkflowState:
         """Transition a workflow status after lifecycle validation."""
         workflow = await self._get_required_workflow(workflow_id)
-        validate_transition(workflow.status, to_status)
+        old_status = workflow.status
+        validate_transition(old_status, to_status)
 
         self.workflow_repository.update_status(workflow, to_status)
         await self.workflow_repository.session.flush()
+        self.workflow_audit_logger.audit_workflow_status_transitioned(
+            workflow_id=workflow.id,
+            old_status=old_status,
+            new_status=to_status,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            reason=reason,
+        )
 
         workflow_state = self._workflow_to_state(workflow)
         self.workflow_repository.update_state_payload(
@@ -92,6 +113,10 @@ class WorkflowService:
         self,
         workflow_id: UUID,
         state: WorkflowState,
+        *,
+        actor_type: str | None = None,
+        actor_id: UUID | None = None,
+        reason: str | None = None,
     ) -> WorkflowState:
         """Update persisted state payload without changing workflow status."""
         workflow = await self._get_required_workflow(workflow_id)
@@ -104,9 +129,19 @@ class WorkflowService:
                 "Workflow state status must match persisted workflow status",
             )
 
+        old_payload = dict(workflow.state_payload)
+        new_payload = self._state_to_payload(state)
         self.workflow_repository.update_state_payload(
             workflow,
-            self._state_to_payload(state),
+            new_payload,
+        )
+        self.workflow_audit_logger.audit_workflow_state_updated(
+            workflow_id=workflow.id,
+            status=workflow.status,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            reason=reason,
+            updated_fields=self._updated_state_fields(old_payload, new_payload),
         )
         await self.workflow_repository.session.flush()
         return self._workflow_to_state(workflow)
@@ -134,3 +169,16 @@ class WorkflowService:
 
     def _state_to_payload(self, state: WorkflowState) -> dict[str, Any]:
         return state.model_dump(mode="json", exclude_none=True)
+
+    def _updated_state_fields(
+        self,
+        old_payload: dict[str, Any],
+        new_payload: dict[str, Any],
+    ) -> list[str]:
+        metadata_fields = {"created_at", "updated_at"}
+        return sorted(
+            key
+            for key, value in new_payload.items()
+            if key not in metadata_fields
+            if old_payload.get(key) != value
+        )
