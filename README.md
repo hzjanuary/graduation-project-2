@@ -1,294 +1,427 @@
-# repository-harness
+# Enterprise Multi-Agent OS
 
-Turn any software repo into an agent-ready workspace.
+**Academic Title:** Enterprise Procurement Workflow Automation using LangGraph-based Multi-Agent System
 
-`repository-harness` is a repository-level operating harness for Claude Code,
-Codex, Cursor, and other coding agents. It gives agents the missing project
-context they need before they change code: where to start, what the product
-contract says, how risky the work is, what proof is required, and which
-decisions future agents should inherit.
+A state-driven business workflow operating system that automates complex enterprise procurement workflows by coordinating multiple specialized AI Agents, deterministic tools, enterprise knowledge bases, human approvals, and audit trails.
 
-The app is what users touch. The harness is what agents touch.
+This is not a chatbot. It is a **workflow orchestration platform** where AI Agents act as specialized workers inside a controlled enterprise process.
 
-## Why Star This Repo
+---
 
-Star this repo if you want practical, reusable patterns for making AI-assisted
-software development more reliable, inspectable, and easier for humans to steer.
+## Table of Contents
 
-This project is exploring a simple idea:
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Docker Services](#docker-services)
+- [Backend](#backend)
+- [Workflow Pipeline](#workflow-pipeline)
+- [User Roles](#user-roles)
+- [Implementation Phases](#implementation-phases)
+- [Demo Dataset](#demo-dataset)
+- [API Endpoints](#api-endpoints)
 
-> Coding agents do not only need better prompts. They need better repositories.
+---
 
-## The Problem
+## Overview
 
-Most repos are built for humans reading code in a familiar codebase. Coding
-agents usually enter with only a chat prompt and a shallow snapshot of files.
-That leads to common failure modes:
+Enterprise Multi-Agent OS orchestrates a multi-step procurement workflow:
 
-- The agent edits code before understanding product intent.
-- Important constraints live only in chat history or in someone's head.
-- Validation expectations are vague or discovered too late.
-- Architecture tradeoffs are repeated instead of inherited.
-- Large requests do not get broken into reviewable story-sized work.
+```
+Business Request
+  -> Planner Agent (classify intent and domain)
+  -> Retrieval Agent (fetch contracts, policies, pricing)
+  -> Calculator Agent (deterministic quotation generation)
+  -> Compliance Agent (check against policies and contracts)
+  -> Validation Agent (schema and business rule validation)
+  -> Human Approval (manager review)
+  -> Email Preview Agent (generate customer-facing output)
+  -> Completed Workflow
+```
 
-## The Harness Approach
+The platform supports five procurement domains:
 
-A repository starts to have a harness when it helps an agent answer practical
-engineering questions without relying only on chat history:
+- IT Equipment
+- Office Furniture
+- Facility Maintenance
+- Software Subscription
+- Logistics Equipment
 
-- What should I read first?
-- What type of work is this?
-- Which product contract does it affect?
-- How risky is the change?
-- What proof will show the work is done?
-- What decision or lesson should future agents inherit?
+---
 
-In this repo, those answers live in:
+## Architecture
 
-- `AGENTS.md` — the stable agent shim with local project notes and Harness
-  doc links.
-- `docs/HARNESS.md` — the human-agent collaboration model.
-- `docs/FEATURE_INTAKE.md` — tiny, normal, and high-risk work classification.
-- `docs/ARCHITECTURE.md` — architecture discovery and boundary rules.
-- `docs/TEST_MATRIX.md` — behavior-to-proof validation expectations.
-- `docs/stories/` — story packets and backlog items.
-- `docs/decisions/` — durable decisions and tradeoffs.
-- `docs/templates/` — reusable spec, story, decision, and validation templates.
+```
+NextJS Dashboard
+    |
+FastAPI API Gateway
+    |
+LangGraph Workflow Runtime
+    |
+Specialized Agent Layer
+    |
++-- PostgreSQL (business data)
++-- Redis (runtime state, cache)
++-- Qdrant (vector search)
++-- MinIO (object storage)
++-- LLM Providers (Groq, OpenRouter, Ollama, Gemini)
+```
 
-OpenAI describes this shift as an agent-first world where humans steer and
-agents execute:
+**Design principles:**
+- Clean Architecture with async-first backend
+- State-driven orchestration with explicit human-in-the-loop control
+- Tool-based Agent execution (Agents do not own workflow state)
+- Every Agent has one responsibility and returns structured Pydantic output
+- Deterministic calculation (LLM never performs arithmetic directly)
+- All outputs carry citations and metadata
 
-https://openai.com/index/harness-engineering/
+---
 
-## Install Harness Into A Project
+## Tech Stack
 
-From a target project directory, run:
+| Layer | Technology |
+|---|---|
+| Backend | Python 3.12, FastAPI, Uvicorn, Pydantic v2 |
+| Database | PostgreSQL 16 (asyncpg), SQLAlchemy 2, Alembic |
+| Cache | Redis 7 |
+| Vector Store | Qdrant |
+| Object Storage | MinIO |
+| Workflow Engine | LangGraph |
+| LLM Providers | Groq, OpenRouter, Ollama, Gemini |
+| Auth | JWT (PyJWT), Argon2 password hashing |
+| Code Quality | Ruff, Black, MyPy, Pytest |
+| Logging | Structlog |
+| Infrastructure | Docker, Docker Compose |
+| Frontend (planned) | NextJS, TypeScript, Tailwind CSS, shadcn/ui |
+
+---
+
+## Project Structure
+
+```
+.
+├── .ai/                          # AI development assets
+│   ├── project/                  # Project contracts and architecture docs
+│   │   ├── PROJECT_CONTRACT.md
+│   │   ├── ARCHITECTURE.md
+│   │   ├── TECH_STACK.md
+│   │   ├── CODING_STANDARD.md
+│   │   ├── FOLDER_STRUCTURE.md
+│   │   ├── STATE_CONTRACT.md
+│   │   ├── AGENT_CONTRACT.md
+│   │   ├── API_CONTRACT.md
+│   │   └── DATABASE_CONTRACT.md
+│   ├── prompts/                  # Agent system prompts
+│   ├── specs/                    # SPEC files (29 specs across 6 phases)
+│   └── templates/                # Spec, task, ADR, PR templates
+├── backend/                      # FastAPI backend
+│   ├── app/
+│   │   ├── api/v1/               # API routes
+│   │   ├── auth/                 # JWT, RBAC, password utilities
+│   │   ├── cache/                # Redis cache provider
+│   │   ├── config/               # Settings (pydantic-settings)
+│   │   ├── core/                 # Logging, utilities
+│   │   ├── db/                   # SQLAlchemy session, base, mixins
+│   │   ├── exceptions/           # Exception handlers
+│   │   ├── middleware/            # Request ID, logging middleware
+│   │   ├── models/               # SQLAlchemy models
+│   │   ├── repositories/         # Generic CRUD repository
+│   │   ├── schemas/              # Pydantic request/response schemas
+│   │   ├── services/             # Business logic layer
+│   │   ├── storage/              # MinIO object storage provider
+│   │   ├── tests/                # Pytest test suite
+│   │   ├── vectorstore/          # Qdrant vector store provider
+│   │   └── workflows/            # Workflow state, lifecycle, events
+│   ├── alembic/                  # Database migrations
+│   ├── Dockerfile
+│   ├── pyproject.toml
+│   └── .env.example
+├── datasets/                     # Demo data for MVP
+│   ├── customers.csv / .json
+│   ├── products.csv / .json
+│   ├── pricing_rules.csv / .json
+│   ├── contracts/                # Contract documents
+│   ├── policies/                 # Policy documents
+│   ├── rfqs/                     # Sample RFQ requests
+│   ├── expected_outputs/         # Expected quotation outputs
+│   └── index/                    # Document index
+├── docs/                         # Harness and project documentation
+├── scripts/                      # Schema SQL, CLI tools
+├── docker-compose.yml
+├── SPEC.md                       # Full product specification
+└── AGENTS.md                     # Agent operating guide
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Docker and Docker Compose
+- Python 3.12 (for local development)
+- Poetry (Python package manager)
+
+### Quick Start with Docker
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
+# Clone the repository
+git clone <repository-url>
+cd graduation-project-2
+
+# Start all services
+docker-compose up --build
+
+# Verify the backend is running
+curl http://localhost:8000/health
 ```
 
-On Windows PowerShell, run:
-
-```powershell
-& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.ps1"))) -Yes
-```
-
-If the target already has `AGENTS.md`, `docs/`, or `scripts/`, choose one:
+### Local Development Setup
 
 ```bash
-# Update an existing Harness repo without moving existing files
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --merge --yes
+# Navigate to backend
+cd backend
 
-# Back up and replace AGENTS.md, docs/, and scripts/
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --override --yes
+# Install dependencies
+poetry install
+
+# Copy environment file
+cp .env.example .env
+
+# Start infrastructure services only
+docker-compose up -d postgres redis qdrant minio
+
+# Run database migrations
+docker-compose run --rm backend-test alembic upgrade head
+
+# Start the backend
+poetry run uvicorn app.main:app --reload
 ```
 
-```powershell
-# Update an existing Harness repo without moving existing files
-& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.ps1"))) -Merge -Yes
+The API documentation is available at `http://127.0.0.1:8000/docs`.
 
-# Back up and replace AGENTS.md, docs/, and scripts/
-& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.ps1"))) -Override -Yes
-```
-
-Use `--merge` when a project already has Harness and you want to append newly
-added Harness files without moving the existing `AGENTS.md`, `docs/`, or
-`scripts/` paths into backup. Existing files stay untouched; only missing
-Harness files are created.
-
-For older Harness installs whose `AGENTS.md` still contains the full generated
-operating guide, refresh it into the small stable shim:
+### Running Tests
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --merge --refresh-agent-shim --yes
+# Via Docker (reproducible environment)
+docker-compose run --rm backend-test pytest
+docker-compose run --rm backend-test ruff check .
+docker-compose run --rm backend-test black --check .
+docker-compose run --rm backend-test mypy app
+
+# Or locally
+cd backend
+poetry run pytest
+poetry run ruff check .
+poetry run black --check .
+poetry run mypy app
 ```
 
-The refresh backs up the existing file. If it detects the old
-Harness-generated guide, it replaces it with the shim. If the file appears
-custom, it appends or updates a marked Harness block instead of overwriting the
-project's local instructions.
+---
 
-If the project is driven with Claude Code, add `--claude`. Claude Code never
-auto-loads `AGENTS.md`, so without this the installed harness is invisible to
-fresh sessions. The flag installs (or refreshes) a `CLAUDE.md` whose marked
-Harness block `@`-imports `AGENTS.md` and `docs/FEATURE_INTAKE.md` into every
-session's context. An existing `CLAUDE.md` gets the block appended after a
-backup; plain installs without the flag never touch `CLAUDE.md`:
+## Environment Variables
 
-```bash
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --claude --yes
+| Variable | Description | Default |
+|---|---|---|
+| `APP_ENV` | Environment mode | `development` |
+| `DEBUG` | Debug mode | `true` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql+asyncpg://postgres:postgres@localhost:5432/enterprise_os` |
+| `REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
+| `QDRANT_URL` | Qdrant URL | `http://localhost:6333` |
+| `MINIO_ENDPOINT` | MinIO endpoint | `localhost:9000` |
+| `MINIO_ACCESS_KEY` | MinIO access key | |
+| `MINIO_SECRET_KEY` | MinIO secret key | |
+| `MINIO_BUCKET_NAME` | MinIO bucket | `enterprise-multi-agent-os` |
+| `JWT_SECRET_KEY` | JWT signing secret | (development default) |
+| `JWT_ALGORITHM` | JWT algorithm | `HS256` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token TTL | `30` |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token TTL | `7` |
+| `LLM_PROVIDER` | Active LLM provider | `ollama` |
+| `GROQ_API_KEY` | Groq API key | |
+| `OPENROUTER_API_KEY` | OpenRouter API key | |
+| `GEMINI_API_KEY` | Gemini API key | |
+| `OLLAMA_BASE_URL` | Ollama base URL | `http://localhost:11434` |
+
+See `backend/.env.example` for the full list. Never commit real secrets.
+
+---
+
+## Docker Services
+
+| Service | Port | Description |
+|---|---|---|
+| `backend` | 8000 | FastAPI API server |
+| `postgres` | 5432 | PostgreSQL 16 database |
+| `redis` | 6379 | Redis 7 cache |
+| `qdrant` | 6333 | Qdrant vector database |
+| `minio` | 9000 (API), 9001 (console) | MinIO object storage |
+
+---
+
+## Backend
+
+### Health Endpoints
+
+```
+GET /       Service metadata and endpoint links
+GET /health Overall application health
+GET /ready  Readiness check
+GET /live   Liveness status
 ```
 
-Or install into a specific path:
+### Authentication
 
-```bash
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --directory /path/to/project --yes
+```
+POST /api/v1/auth/login    Login with email and password
+POST /api/v1/auth/refresh  Refresh token pair
+POST /api/v1/auth/logout   Logout (stateless MVP)
+GET  /api/v1/auth/me       Current user profile
 ```
 
-```powershell
-& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.ps1"))) -Directory C:\path\to\project -Yes
+Passwords are hashed with Argon2. Tokens use JWT with configurable expiry.
+
+### RBAC Roles
+
+- **Admin** — Full system access
+- **Manager** — Approve/reject workflows
+- **Sales** — Create and track workflows
+- **Legal** — Manage policies and compliance
+- **Finance** — Manage pricing and calculations
+- **Viewer** — Read-only access
+
+### Storage Providers
+
+- **Cache** — `app/cache/` with Redis implementation
+- **Vector Store** — `app/vectorstore/` with Qdrant implementation
+- **Object Storage** — `app/storage/` with MinIO implementation
+
+All providers follow an interface-first design. Each has a provider contract and a concrete implementation.
+
+---
+
+## Workflow Pipeline
+
+### Workflow Statuses
+
+```
+CREATED -> PLANNING -> RETRIEVING -> CALCULATING -> CHECKING_COMPLIANCE
+  -> VALIDATING -> WAITING_APPROVAL -> APPROVED -> GENERATING_EMAIL -> COMPLETED
 ```
 
-Use `--dry-run` on Bash or `-DryRun` on PowerShell to preview changes before
-writing files.
+Failure paths: `FAILED`, `CANCELLED`, `REJECTED`
 
-The installer also downloads the prebuilt Harness CLI for the current platform,
-verifies its `.sha256` checksum, and installs it at
-`scripts/bin/harness-cli` on macOS/Linux or `scripts/bin/harness-cli.exe` on
-Windows. The Rust CLI is the main Harness tool and stable command path.
+### Agents
 
-Harness CLI release assets are published from tags by the
-`Harness CLI Release` GitHub Actions workflow. The installer expects each
-release to include `harness-cli-<platform>` and
-`harness-cli-<platform>.sha256` assets for macOS arm64, macOS x64, Linux x64,
-Linux arm64, and Windows x64. The Windows asset is
-`harness-cli-windows-x64.exe` plus `harness-cli-windows-x64.exe.sha256`.
+| Agent | Responsibility |
+|---|---|
+| Planner Agent | Classify intent, identify procurement domain, create execution plan |
+| Retrieval Agent | Fetch contracts, policies, pricing data with citations |
+| Calculator Agent | Deterministic quotation calculation (no LLM arithmetic) |
+| Compliance Agent | Check quotation against policies, contracts, and domain rules |
+| Validation Agent | Validate schemas, required fields, calculation consistency |
+| Email Agent | Generate professional email preview (requires approval) |
 
-Merged pull requests are recorded in `CHANGELOG.md` by the
-`Post-Merge Maintenance` workflow. When a merged PR changes the Rust CLI source,
-schema, Cargo metadata, or CLI release packaging, that workflow bumps the CLI
-patch version, updates `scripts/harness-cli-release-tag`, creates a
-`harness-cli-v*` tag, and runs the Harness CLI release build for that tag.
+---
 
-## Try The Flow
+## User Roles
 
-The fastest way to understand the harness is to inspect the tiny demo:
+| Role | Capabilities |
+|---|---|
+| Admin | Manage users, roles, system config, master data, audit logs |
+| Sales | Create workflows, upload RFQs, track progress, review outputs |
+| Manager | View pending approvals, approve/reject workflows |
+| Legal | Upload policies, review compliance reports, add legal comments |
+| Finance | Upload pricing, manage tax/discount rules, review calculations |
+| Viewer | View workflows, details, and analytics (read-only) |
 
-- `docs/demo/README.md`: shows how a simple product idea becomes product docs,
-  stories, validation expectations, and decisions before implementation starts.
+---
 
-A typical flow looks like this:
+## Implementation Phases
 
-```text
-human intent or product spec
-  -> product contract
-  -> feature intake
-  -> story packet
-  -> validation expectations
-  -> implementation work
-  -> decision or lesson captured for future agents
-```
+| Phase | Scope | Status |
+|---|---|---|
+| Sprint -1 | AI Development Framework (.ai project files, datasets) | Done |
+| Phase 1 | Infrastructure (Auth, DB, Storage providers) | In Progress |
+| Phase 2 | Core Workflow Engine (State, LangGraph, APIs, Events) | Planned |
+| Phase 3 | Agent Implementation (Planner, Retrieval, Calculator, Compliance, Validation, Email) | Planned |
+| Phase 4 | Frontend (NextJS dashboard, Auth UI, Agent Monitor, Approval Center) | Planned |
+| Phase 5 | Observability, Analytics, Demo | Planned |
+| Phase 6 | Deployment, CI/CD, Final Documentation | Planned |
 
-Implementation prompts do not go straight to code. They first pass through
-feature intake, become story-sized work when needed, and then carry both product
-validation and harness maintenance expectations.
+### Demo Acceptance Criteria
 
-## Try Harness Symphony
+The MVP is successful when:
 
-Harness Symphony is the local runner for Harness stories. It prepares an
-isolated run workspace, passes an explicit contract to an agent, collects
-`SUMMARY.md` and `RESULT.json`, and keeps durable Harness updates reviewable
-through semantic changesets.
+1. Sales user creates a workflow from the demo RFQ
+2. Planner identifies domain as IT equipment
+3. Retrieval finds contract `CON-2026-ACME-IT` and applies 10% discount
+4. Calculator produces grand total of **47,628 USD**
+5. Compliance returns PASS or LOW risk
+6. Validation confirms output validity
+7. Manager approves the workflow
+8. Email Agent generates the email preview
+9. Workflow status becomes COMPLETED
 
-Start here:
+---
 
-- `docs/SYMPHONY_QUICKSTART.md`: first-run instructions and the daily command
-  loop.
-- `docs/SYMPHONY_SCOPE.md`: detailed design and implementation scope.
+## Demo Dataset
 
-The usual first commands are:
+Located in `datasets/`. Includes:
 
-```bash
-cargo build -p harness-symphony
-target/debug/harness-symphony doctor
-target/debug/harness-symphony work list
-target/debug/harness-symphony run <story-id> --prepare-only
-```
+- Customers (CSV/JSON)
+- Products (CSV/JSON)
+- Pricing rules (CSV/JSON)
+- Contracts (markdown)
+- Policies (markdown)
+- Sample RFQs
+- Expected outputs
+- Document index
 
-## Tool Registry
+### Recommended Demo Order
 
-The harness can use optional external tools (linters, code-graph servers,
-deploy checks) without depending on any of them. You register a tool as a
-provider of a *capability*, the harness scans whether it is actually present,
-and a workflow step uses whatever is equipped — an absent tool is a clean skip,
-never a failure.
+1. RFQ-001: IT equipment (simple, easy to explain)
+2. RFQ-004: Software subscription (VAT 0, seat-based pricing)
+3. RFQ-005: Logistics equipment (multi-item quotation)
+4. RFQ-003: Facility maintenance (compliance/SLA logic)
+5. RFQ-002: Office furniture (multi-item, installation policy)
 
-```bash
-# register a tool as a provider of a capability
-scripts/bin/harness-cli tool register --name deploy-check --kind cli \
-  --capability deploy-verification --command ./scripts/deploy-check.sh \
-  --responsibility Verification --description "Verify deploy health before release"
+---
 
-# scan presence (writes present/missing/unknown)
-scripts/bin/harness-cli tool check
+## API Endpoints
 
-# a step looks up what is equipped for a purpose
-scripts/bin/harness-cli query tools --capability deploy-verification --status present
-```
+### Auth
 
-Kinds (`cli`, `binary`, `mcp`, `skill`, `http`) make it agent-generic: each
-agent runtime uses what it can orchestrate. See `docs/TOOL_REGISTRY.md` for the
-full model, the degrade ladder, and how to wire a tool into a flow step.
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
+- `GET /api/v1/auth/me`
 
-## Current State
+### Workflows
 
-This repository is in Harness v0.
+- `POST /api/v1/workflows`
+- `GET /api/v1/workflows`
+- `GET /api/v1/workflows/{workflow_id}`
+- `POST /api/v1/workflows/{workflow_id}/run`
+- `POST /api/v1/workflows/{workflow_id}/resume`
+- `POST /api/v1/workflows/{workflow_id}/cancel`
 
-There is no application implementation and no baked-in product specification
-yet. The current work is the reusable project harness: the file structure,
-agent operating model, feature intake process, story templates, and validation
-expectations that help humans and agents turn a future user-provided spec into
-implementation work.
+### Approvals
 
-## Product Sources
+- `GET /api/v1/approvals/pending`
+- `POST /api/v1/approvals/{workflow_id}/approve`
+- `POST /api/v1/approvals/{workflow_id}/reject`
 
-No product contract is currently defined.
+### Events
 
-When a user provides a project specification, add or reference it as the input
-spec for the first buildout, then derive smaller living artifacts from it:
+- `GET /api/v1/workflows/{workflow_id}/events`
+- `GET /api/v1/workflows/{workflow_id}/state`
+- `WS /api/v1/workflows/{workflow_id}/stream`
 
-- `docs/product/`: current product contract files, created from the spec.
-- `docs/stories/`: story packets and backlog created from selected work.
-- `docs/TEST_MATRIX.md`: behavior-to-proof control panel.
-- `docs/decisions/`: durable decisions and tradeoffs.
+---
 
-Do not keep a project-specific spec or product breakdown in this harness until
-a real project supplies one.
+## License
 
-## Repository Structure
-
-```text
-project/
-  AGENTS.md
-  README.md
-  docs/
-    HARNESS.md
-    FEATURE_INTAKE.md
-    ARCHITECTURE.md
-    TEST_MATRIX.md
-    HARNESS_BACKLOG.md
-    product/
-    stories/
-    decisions/
-    demo/
-    templates/
-  scripts/
-    README.md
-```
-
-## Contributing
-
-This project is early and benefits most from real-world agent failure cases,
-example harness installs, docs improvements, and reusable workflow patterns.
-See `CONTRIBUTING.md` for contribution ideas.
-
-Useful contributions include:
-
-- Show how the harness works in a real project.
-- Add missing templates or improve existing ones.
-- Propose validation patterns for different stacks.
-- Share failures where an agent made the wrong change because the repo lacked
-  context.
-- Compare harness behavior across Claude Code, Codex, Cursor, and other tools.
-
-## Share
-
-If this idea resonates, please star the repo and share it with someone building
-with coding agents.
-
-Short description:
-
-> An agent-ready repo harness for Claude Code, Codex, Cursor, and other coding
-> agents: AGENTS.md, product contracts, story packets, validation matrix, and
-> decision records.
+This project is an academic graduation project.
