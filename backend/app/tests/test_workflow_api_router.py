@@ -142,12 +142,12 @@ def test_workflow_rbac_dependency_helpers_are_callable() -> None:
 def test_workflow_router_metadata_schema_is_static_and_typed() -> None:
     metadata = WorkflowRouterMetadata(
         name="workflow-api",
-        status="foundation-only",
+        status="implemented",
         planned_endpoints=WORKFLOW_PLANNED_ENDPOINTS,
     )
 
     assert metadata.name == "workflow-api"
-    assert metadata.status == "foundation-only"
+    assert metadata.status == "implemented"
     assert metadata.planned_endpoints == WORKFLOW_PLANNED_ENDPOINTS
 
 

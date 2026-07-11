@@ -30,6 +30,14 @@ from app.workflows import (
 TEST_EMAIL_PREFIX = "workflow-api"
 TEST_DOMAIN_PREFIX = "workflow-api-domain"
 TEST_ROLE_DESCRIPTION = "Workflow API endpoint test role"
+SPEC_007_WORKFLOW_ENDPOINTS = {
+    "POST /api/v1/workflows",
+    "GET /api/v1/workflows",
+    "GET /api/v1/workflows/{workflow_id}",
+    "POST /api/v1/workflows/{workflow_id}/transition",
+    "PATCH /api/v1/workflows/{workflow_id}/state",
+    "GET /api/v1/workflows/{workflow_id}/events",
+}
 
 
 @pytest.fixture
@@ -359,6 +367,25 @@ async def test_list_workflows_rejects_invalid_query_params(
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_workflow_router_metadata_reports_implemented_api(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    user = await create_user_with_roles(db_session, role_names=[RoleName.VIEWER])
+
+    response = await client.get(
+        "/api/v1/workflows/_meta",
+        headers=auth_headers(user),
+    )
+    data = response.json()
+
+    assert response.status_code == 200
+    assert data["name"] == "workflow-api"
+    assert data["status"] == "implemented"
+    assert set(data["planned_endpoints"]) == SPEC_007_WORKFLOW_ENDPOINTS
 
 
 @pytest.mark.asyncio

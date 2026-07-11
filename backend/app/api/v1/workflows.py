@@ -136,7 +136,7 @@ async def list_workflows(
 
 
 class WorkflowRouterMetadata(BaseModel):
-    """Static workflow router metadata for foundation validation."""
+    """Static workflow router metadata for API validation."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -153,10 +153,10 @@ class WorkflowRouterMetadata(BaseModel):
 async def workflow_router_metadata(
     _current_user: WorkflowReadAccessDependency,
 ) -> WorkflowRouterMetadata:
-    """Return static metadata while workflow endpoint logic is deferred."""
+    """Return static workflow API metadata."""
     return WorkflowRouterMetadata(
         name="workflow-api",
-        status="foundation-only",
+        status="implemented",
         planned_endpoints=WORKFLOW_PLANNED_ENDPOINTS,
     )
 
