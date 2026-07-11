@@ -13,7 +13,7 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-006 LangGraph Runtime - TASK 006.1 implemented, awaiting review
+- SPEC-006 LangGraph Runtime - TASK 006.2 implemented, awaiting review
 
 ## Current SPEC-006 Implementation State
 
@@ -22,9 +22,10 @@ Planning files:
 - `.ai/specs/SPEC-006-langgraph-runtime/spec.md`
 - `.ai/specs/SPEC-006-langgraph-runtime/tasks.md`
 
-Completed task:
+Completed tasks:
 
 - `TASK 006.1 - Runtime State Adapter and Contracts`
+- `TASK 006.2 - LangGraph Dependency and Graph Skeleton`
 
 TASK 006.1 deliverables:
 
@@ -48,6 +49,30 @@ TASK 006.1 behavior:
   runtime context, outputs, stage outputs, steps, error, retry count, and
   events.
 - Keeps adapters side-effect free and JSON-compatible.
+
+TASK 006.2 deliverables:
+
+- `backend/app/runtime/graph.py`
+- `backend/app/tests/test_runtime_graph.py`
+- `backend/app/runtime/__init__.py` graph exports
+- `backend/pyproject.toml` LangGraph dependency
+- `backend/poetry.lock` dependency lock update
+- `backend/README.md` graph skeleton notes
+
+TASK 006.2 behavior:
+
+- Adds `langgraph` as the backend runtime graph dependency.
+- Defines a typed `RuntimeStatePayload` TypedDict at the LangGraph boundary.
+- Defines runtime graph type aliases and `CompiledWorkflowGraph`.
+- Defines deterministic stage sequence and linear topology:
+  `START -> planner -> retrieval -> quotation -> compliance -> validation ->
+  approval -> email_preparation -> END`.
+- Provides `validate_runtime_node_handlers` to require handlers for every
+  `RuntimeStage`.
+- Provides `build_workflow_graph` to compile a LangGraph `StateGraph` from
+  injected handlers.
+- Keeps production runtime node logic, runtime service persistence, and API
+  route behavior out of scope.
 
 Overall SPEC-006 scope:
 
@@ -77,9 +102,9 @@ Explicit SPEC-006 deferrals:
 
 ## Next Task
 
-- Review `TASK 006.1 - Runtime State Adapter and Contracts`.
-- Then implement `TASK 006.2 - LangGraph Dependency and Graph Skeleton` only
-  after TASK 006.1 is approved.
+- Review `TASK 006.2 - LangGraph Dependency and Graph Skeleton`.
+- Then implement `TASK 006.3 - Deterministic Runtime Nodes` only after
+  TASK 006.2 is approved.
 
 ## Expected SPEC-006 Quality Gate
 
@@ -117,4 +142,5 @@ Explicit SPEC-006 deferrals:
 - SPEC-005 final review recorded and approved.
 - SPEC-007 final review recorded and approved.
 - SPEC-006 planning recorded.
-- TASK 006.1 implementation should be recorded after current validation.
+- TASK 006.1 implementation recorded and approved.
+- TASK 006.2 implementation should be recorded after current validation.

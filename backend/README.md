@@ -409,6 +409,9 @@ RuntimeWorkflowState              JSON-compatible state for graph execution
 RuntimeWorkflowResult             lightweight future runtime result shape
 workflow_state_to_runtime_state() converts persisted WorkflowState to runtime state
 runtime_state_to_workflow_state() converts runtime output back to WorkflowState
+runtime_stage_sequence()          runtime graph stage order
+runtime_graph_topology()          START/stage/END edge topology
+build_workflow_graph()            compiles injected handlers into a LangGraph graph
 ```
 
 The adapter preserves the existing `WorkflowState` envelope while adding
@@ -417,6 +420,20 @@ stage outputs, runtime context, error, and retry count. Adapter functions are
 pure and side-effect free. They do not import LangGraph, build graphs, execute
 nodes, call Agents or LLM providers, create API routes, or modify database
 models.
+
+The runtime graph skeleton uses LangGraph `StateGraph` with injected handlers
+for each `RuntimeStage`. The topology is deterministic and linear:
+
+```text
+START -> planner -> retrieval -> quotation -> compliance -> validation
+  -> approval -> email_preparation -> END
+```
+
+The graph builder validates that every runtime stage has a handler before
+compilation. Handler injection keeps TASK 006.2 free of production node logic,
+workflow persistence, API route behavior, Agent calls, LLM calls, RAG,
+document indexing, event streaming, frontend behavior, migrations, and model
+changes.
 
 ## Docker
 
