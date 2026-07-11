@@ -399,6 +399,25 @@ The SPEC-007 workflow API slices implemented so far do not implement run/resume
 routes, audit query APIs, event streaming, LangGraph runtime execution, or
 Agent calls.
 
+## Runtime State Adapter
+
+Runtime-facing contracts for SPEC-006 live in `app/runtime`.
+
+```text
+RuntimeStage                      deterministic runtime stage names
+RuntimeWorkflowState              JSON-compatible state for graph execution
+RuntimeWorkflowResult             lightweight future runtime result shape
+workflow_state_to_runtime_state() converts persisted WorkflowState to runtime state
+runtime_state_to_workflow_state() converts runtime output back to WorkflowState
+```
+
+The adapter preserves the existing `WorkflowState` envelope while adding
+runtime-oriented fields such as current stage, completed stages, failed stage,
+stage outputs, runtime context, error, and retry count. Adapter functions are
+pure and side-effect free. They do not import LangGraph, build graphs, execute
+nodes, call Agents or LLM providers, create API routes, or modify database
+models.
+
 ## Docker
 
 Build and run the backend plus Phase 1 infrastructure services from the
