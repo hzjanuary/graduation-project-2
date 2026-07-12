@@ -26,13 +26,40 @@ Planning files:
 
 Planned tasks:
 
-- `TASK 009.1 - Frontend Project Bootstrap`
+- `TASK 009.1 - Frontend Project Bootstrap` - Implemented, awaiting review
 - `TASK 009.2 - Frontend API Client and Auth Session`
 - `TASK 009.3 - Dashboard Layout and Navigation`
 - `TASK 009.4 - Workflow List and Detail Pages`
 - `TASK 009.5 - Workflow Create and Run Actions`
 - `TASK 009.6 - WebSocket Event Timeline`
 - `TASK 009.7 - Frontend UX Hardening and SPEC-009 Final Review`
+
+## TASK 009.1 Implementation State
+
+Deliverables:
+
+- `frontend/package.json`
+- `frontend/next.config.mjs`
+- `frontend/tsconfig.json`
+- `frontend/app/layout.tsx`
+- `frontend/app/page.tsx`
+- `frontend/app/globals.css`
+- `frontend/components.json`
+- `frontend/components/ui/`
+- `frontend/lib/utils.ts`
+- `frontend/.env.example`
+- `frontend/README.md`
+
+Behavior:
+
+- Adds a minimal Next.js App Router application.
+- Uses TypeScript and Tailwind CSS.
+- Prepares shadcn/ui-compatible aliases and folder structure.
+- Adds a static branded placeholder dashboard page only.
+- Documents local environment variables for the existing backend API and
+  WebSocket base URLs.
+- Does not call backend APIs, implement auth/session behavior, create workflow
+  UI, run workflows, or open WebSocket connections.
 
 ## SPEC-009 Scope
 
@@ -89,3 +116,4 @@ browser smoke checks after the frontend project exists.
 - SPEC-007 final review recorded and approved.
 - SPEC-008 final validation approved with Harness intake #64 and trace #75.
 - SPEC-009 planning recorded with Harness intake #65.
+- TASK 009.1 implementation recorded with Harness intake #66.
