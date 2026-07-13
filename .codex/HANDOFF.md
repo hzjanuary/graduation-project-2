@@ -30,8 +30,8 @@ Planned tasks:
 - `TASK 009.2 - Frontend API Client and Auth Session` - Approved
 - `TASK 009.3 - Dashboard Layout and Navigation` - Approved
 - `TASK 009.4 - Workflow List and Detail Pages` - Approved
-- `TASK 009.5 - Workflow Create and Run Actions` - Implemented, awaiting review
-- `TASK 009.6 - WebSocket Event Timeline`
+- `TASK 009.5 - Workflow Create and Run Actions` - Approved
+- `TASK 009.6 - WebSocket Event Timeline` - Implemented, awaiting review
 - `TASK 009.7 - Frontend UX Hardening and SPEC-009 Final Review`
 
 ## TASK 009.1 Implementation State
@@ -194,6 +194,42 @@ Behavior:
   continuation, backend changes, migrations, models, Agents, LLM UI, RAG UI,
   document upload UI, or production auth hardening.
 
+## TASK 009.6 Implementation State
+
+Deliverables:
+
+- `frontend/lib/streaming/workflow-events.ts`
+- `frontend/hooks/use-workflow-event-stream.ts`
+- `frontend/components/workflows/workflow-event-timeline.tsx`
+- `frontend/components/workflows/workflow-detail-view.tsx`
+- `frontend/components/workflows/workflow-detail.tsx`
+- `frontend/app/workflows/[workflowId]/page.tsx`
+- `frontend/lib/api/types.ts`
+- `frontend/tests/workflow-event-stream.test.tsx`
+- `frontend/tests/workflow-pages.test.tsx`
+- `frontend/README.md`
+
+Behavior:
+
+- Adds a frontend WebSocket stream helper for
+  `WS /api/v1/workflows/{workflow_id}/stream`.
+- Builds stream URLs from `NEXT_PUBLIC_WS_BASE_URL` and authenticates with the
+  existing access token as an `access_token` query parameter.
+- Adds safe parsing for `workflow.event` stream messages and rejects malformed
+  messages without rendering unsafe payloads.
+- Adds a client hook for connecting, connected, disconnected, error, manual
+  reconnect, and cleanup-on-unmount behavior.
+- Adds a workflow event timeline that combines persisted REST event backlog
+  with live WebSocket messages, deduplicates by `event_id`, sorts
+  deterministically, and renders bounded payload previews.
+- Integrates the live timeline into workflow detail pages.
+- Adds tests for URL construction, message parsing, no-token behavior,
+  deduplication, connection state display, malformed messages, detail
+  integration, and socket cleanup.
+- Does not modify backend code, invent endpoints, implement SSE, implement
+  `/resume`, stream LLM tokens, stream agent thoughts, add RAG/document upload
+  UI, modify migrations/models, or add production deployment behavior.
+
 ## SPEC-009 Scope
 
 - Next.js frontend application.
@@ -223,9 +259,9 @@ Behavior:
 
 ## Next Task
 
-- Review `TASK 009.5 - Workflow Create and Run Actions`.
-- Then implement `TASK 009.6 - WebSocket Event Timeline` only after review
-  approval.
+- Review `TASK 009.6 - WebSocket Event Timeline`.
+- Then implement `TASK 009.7 - Frontend UX Hardening and SPEC-009 Final Review`
+  only after review approval.
 
 ## Expected SPEC-009 Planning Quality Gate
 
@@ -254,3 +290,4 @@ browser smoke checks after the frontend project exists.
 - TASK 009.3 implementation recorded with Harness intake #68.
 - TASK 009.4 implementation recorded with Harness intake #69.
 - TASK 009.5 implementation recorded with Harness intake #70.
+- TASK 009.6 implementation recorded with Harness intake #71.

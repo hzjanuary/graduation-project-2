@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { WorkflowDetail } from "@/components/workflows/workflow-detail";
+import { WorkflowEventTimeline } from "@/components/workflows/workflow-event-timeline";
 import { workflowErrorMessage } from "@/components/workflows/workflow-list-view";
 import { WorkflowRunPanel } from "@/components/workflows/workflow-run-panel";
 import { getWorkflow, listWorkflowEvents } from "@/lib/api/workflows";
@@ -91,7 +92,11 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
         workflowId={state.workflow.workflow_id}
         onRunCompleted={refreshWorkflowDetail}
       />
-      <WorkflowDetail workflow={state.workflow} events={state.events} />
+      <WorkflowDetail workflow={state.workflow} />
+      <WorkflowEventTimeline
+        workflowId={state.workflow.workflow_id}
+        persistedEvents={state.events}
+      />
     </div>
   );
 }

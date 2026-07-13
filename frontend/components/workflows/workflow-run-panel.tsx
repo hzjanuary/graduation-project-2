@@ -58,7 +58,8 @@ export function WorkflowRunPanel({
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Starts the existing backend runtime and stops at waiting approval.
-            Live WebSocket timeline behavior is deferred to TASK 009.6.
+            When the event stream is connected, runtime events appear in the
+            timeline below.
           </p>
         </div>
         <button

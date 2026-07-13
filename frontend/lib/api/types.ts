@@ -208,3 +208,19 @@ export interface WorkflowEventStreamMessage {
   sequence?: number | null;
   payload: Record<string, unknown>;
 }
+
+export type WorkflowTimelineEventSource = "persisted" | "live";
+
+export interface WorkflowTimelineEvent {
+  event_id: string;
+  workflow_id: string;
+  event_type: string;
+  status?: string | null;
+  stage?: string | null;
+  message?: string | null;
+  created_at: string;
+  emitted_at?: string | null;
+  sequence?: number | null;
+  payload: Record<string, unknown>;
+  source: WorkflowTimelineEventSource;
+}

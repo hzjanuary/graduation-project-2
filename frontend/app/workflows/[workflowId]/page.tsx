@@ -15,7 +15,7 @@ export default async function WorkflowDetailPage({
   return (
     <AppShell
       title="Workflow detail"
-      description="Read-only workflow state and recent persisted event backlog."
+      description="Workflow state, runtime actions, and live event timeline."
     >
       <WorkflowDetailView workflowId={workflowId} />
     </AppShell>

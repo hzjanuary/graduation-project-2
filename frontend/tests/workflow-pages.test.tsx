@@ -20,6 +20,7 @@ afterEach(() => {
   container = null;
   window.localStorage.clear();
   vi.restoreAllMocks();
+  MockWebSocket.instances = [];
 });
 
 describe("workflow pages", () => {
@@ -68,6 +69,7 @@ describe("workflow pages", () => {
 
   it("renders workflow detail and recent events", async () => {
     window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, "access-token");
+    installMockWebSocket();
     mockFetchSequence([
       { workflow: sampleWorkflow("workflow-123") },
       {
@@ -93,8 +95,12 @@ describe("workflow pages", () => {
 
     expect(document.body.textContent).toContain("workflow-123");
     expect(document.body.textContent).toContain("Request summary");
+    expect(document.body.textContent).toContain("Event timeline");
     expect(document.body.textContent).toContain("runtime.started");
     expect(document.body.textContent).toContain("Runtime started");
+    expect(MockWebSocket.instances[0].url).toBe(
+      "ws://localhost:8000/api/v1/workflows/workflow-123/stream?access_token=access-token",
+    );
   });
 
   it("renders a bounded API error", async () => {
@@ -161,4 +167,24 @@ function sampleWorkflow(workflowId: string) {
     created_at: "2026-07-13T10:00:00Z",
     updated_at: "2026-07-13T10:00:00Z",
   };
+}
+
+function installMockWebSocket() {
+  vi.stubGlobal("WebSocket", MockWebSocket);
+}
+
+class MockWebSocket {
+  static instances: MockWebSocket[] = [];
+
+  readonly url: string;
+  onopen: (() => void) | null = null;
+  onmessage: ((event: { data: string }) => void) | null = null;
+  onerror: (() => void) | null = null;
+  onclose: (() => void) | null = null;
+  close = vi.fn();
+
+  constructor(url: string) {
+    this.url = url;
+    MockWebSocket.instances.push(this);
+  }
 }

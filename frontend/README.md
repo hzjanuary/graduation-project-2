@@ -6,7 +6,8 @@ This frontend currently provides the SPEC-009 foundation: project structure,
 TypeScript, Tailwind CSS, shadcn/ui-compatible conventions, typed backend API
 client helpers, a local-development token session layer, the first authenticated
 dashboard shell, workflow list/detail pages, and workflow create/run actions.
-WebSocket event UI is deferred to later tasks.
+Workflow detail pages now include a live WebSocket event timeline backed by the
+existing SPEC-008 stream endpoint.
 
 ## Requirements
 
@@ -116,9 +117,20 @@ Implemented in TASK 009.5:
   create form validation, create success/error states, run success, and run
   conflict errors
 
-Deferred to later SPEC-009 tasks:
+Implemented in TASK 009.6:
 
-- WebSocket event timeline
+- WebSocket event stream client using `NEXT_PUBLIC_WS_BASE_URL`
+- `access_token` query parameter authentication for
+  `WS /api/v1/workflows/{workflow_id}/stream`
+- Unified workflow event timeline that merges persisted REST event backlog and
+  live stream messages
+- Deduplication by `event_id`
+- Connection states for connecting, connected, disconnected, and error
+- Manual reconnect action
+- Safe malformed-message handling and bounded payload previews
+- Unit/component tests for URL construction, message parsing, deduplication,
+  connection state rendering, no-token behavior, malformed messages, and socket
+  cleanup
 
 ## Dashboard Shell
 
@@ -141,8 +153,8 @@ Read-only workflow pages are available at:
 
 They call only existing backend read endpoints and attach the stored bearer
 token. Workflow creation is available at `/workflows/new`, and workflow detail
-pages include a run action that calls the existing backend `/run` endpoint. No
-WebSocket connection is opened until TASK 009.6.
+pages include a run action that calls the existing backend `/run` endpoint and
+a live event timeline that opens the existing workflow WebSocket stream.
 
 ## Auth And API Client
 
@@ -165,6 +177,10 @@ The MVP session stores access and refresh tokens in `localStorage` for local
 development only. Production auth hardening, server-side cookies, route guards,
 and refresh scheduling are deferred.
 
+The workflow event stream uses the current access token as an `access_token`
+query parameter because browser WebSocket clients cannot set arbitrary bearer
+headers reliably.
+
 The minimal login page is available at:
 
 ```text
@@ -172,5 +188,4 @@ The minimal login page is available at:
 ```
 
 It calls the existing backend `POST /api/v1/auth/login` endpoint and stores the
-returned token pair. Workflow create/run actions and live event streaming are
-implemented in later tasks.
+returned token pair.

@@ -1,13 +1,11 @@
-import { WorkflowEventsList } from "@/components/workflows/workflow-events-list";
 import { WorkflowStatusBadge } from "@/components/workflows/workflow-status-badge";
-import type { WorkflowEvent, WorkflowState } from "@/lib/api/types";
+import type { WorkflowState } from "@/lib/api/types";
 
 interface WorkflowDetailProps {
   workflow: WorkflowState;
-  events: WorkflowEvent[];
 }
 
-export function WorkflowDetail({ workflow, events }: WorkflowDetailProps) {
+export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
   return (
     <div className="grid gap-6">
       <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
@@ -54,8 +52,6 @@ export function WorkflowDetail({ workflow, events }: WorkflowDetailProps) {
           </p>
         </section>
       ) : null}
-
-      <WorkflowEventsList events={events} />
     </div>
   );
 }
