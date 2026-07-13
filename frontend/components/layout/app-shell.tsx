@@ -40,7 +40,8 @@ export function AppShell({ title, description, children }: AppShellProps) {
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             The dashboard shell uses the local development MVP session from the
-            login page. Workflow data loading is implemented in later tasks.
+            login page. Sign in to load workflow views that are available for
+            this SPEC-009 slice.
           </p>
           <Link
             className="mt-5 inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-95"

@@ -4,9 +4,9 @@ Next.js dashboard foundation for Enterprise Multi-Agent OS.
 
 This frontend currently provides the SPEC-009 foundation: project structure,
 TypeScript, Tailwind CSS, shadcn/ui-compatible conventions, typed backend API
-client helpers, a local-development token session layer, and the first
-authenticated dashboard shell. Workflow business pages and WebSocket event UI
-are deferred to later tasks.
+client helpers, a local-development token session layer, the first authenticated
+dashboard shell, workflow list/detail pages, and workflow create/run actions.
+WebSocket event UI is deferred to later tasks.
 
 ## Requirements
 
@@ -88,9 +88,36 @@ Implemented in TASK 009.3:
 - Local logout action that clears the MVP session
 - Component smoke tests for dashboard shell, navigation, and logout behavior
 
+Implemented in TASK 009.4:
+
+- Workflow API client helpers for list, detail, and persisted event reads
+- Backend-aligned workflow DTO refinements
+- `/workflows` list page backed by `GET /api/v1/workflows`
+- `/workflows/[workflowId]` detail page backed by
+  `GET /api/v1/workflows/{workflow_id}`
+- Read-only recent persisted events loaded from
+  `GET /api/v1/workflows/{workflow_id}/events`
+- Loading, empty, login-required, 403, 404, and generic error states
+- Unit/component tests for workflow client paths, bearer token attachment,
+  list rendering, detail rendering, empty states, and bounded API errors
+
+Implemented in TASK 009.5:
+
+- Workflow API client helpers for `POST /api/v1/workflows` and
+  `POST /api/v1/workflows/{workflow_id}/run`
+- `/workflows/new` procurement quotation create form
+- Backend-compatible workflow creation payload construction from manual request
+  text, items JSON, and metadata JSON
+- Runtime run action on workflow detail pages
+- Runtime result display for waiting-for-approval behavior
+- Loading, validation, success, 401, 403, 409, and generic error states for
+  create/run flows
+- Unit/component tests for create payload shape, bearer-token attachment,
+  create form validation, create success/error states, run success, and run
+  conflict errors
+
 Deferred to later SPEC-009 tasks:
 
-- Workflow list/detail/create/run UI
 - WebSocket event timeline
 
 ## Dashboard Shell
@@ -103,8 +130,19 @@ The dashboard shell is available at:
 
 It uses the MVP session token stored by `/login`. If no local access token is
 present, the dashboard shows a login-required state with a link back to
-`/login`. Current dashboard routes are placeholders only and do not call
-workflow APIs or open WebSocket connections.
+`/login`.
+
+Read-only workflow pages are available at:
+
+```text
+/workflows
+/workflows/{workflow_id}
+```
+
+They call only existing backend read endpoints and attach the stored bearer
+token. Workflow creation is available at `/workflows/new`, and workflow detail
+pages include a run action that calls the existing backend `/run` endpoint. No
+WebSocket connection is opened until TASK 009.6.
 
 ## Auth And API Client
 
@@ -134,5 +172,5 @@ The minimal login page is available at:
 ```
 
 It calls the existing backend `POST /api/v1/auth/login` endpoint and stores the
-returned token pair. Workflow data loading, create/run actions, and live event
-streaming are implemented in later tasks.
+returned token pair. Workflow create/run actions and live event streaming are
+implemented in later tasks.

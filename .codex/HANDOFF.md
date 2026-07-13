@@ -28,9 +28,9 @@ Planned tasks:
 
 - `TASK 009.1 - Frontend Project Bootstrap` - Approved
 - `TASK 009.2 - Frontend API Client and Auth Session` - Approved
-- `TASK 009.3 - Dashboard Layout and Navigation` - Implemented, awaiting review
-- `TASK 009.4 - Workflow List and Detail Pages`
-- `TASK 009.5 - Workflow Create and Run Actions`
+- `TASK 009.3 - Dashboard Layout and Navigation` - Approved
+- `TASK 009.4 - Workflow List and Detail Pages` - Approved
+- `TASK 009.5 - Workflow Create and Run Actions` - Implemented, awaiting review
 - `TASK 009.6 - WebSocket Event Timeline`
 - `TASK 009.7 - Frontend UX Hardening and SPEC-009 Final Review`
 
@@ -126,6 +126,74 @@ Behavior:
   actions, WebSocket client/timeline behavior, backend changes, migrations,
   models, Agents, LLM UI, RAG UI, or approval/resume UI.
 
+## TASK 009.4 Implementation State
+
+Deliverables:
+
+- `frontend/lib/api/workflows.ts`
+- `frontend/lib/api/types.ts`
+- `frontend/app/workflows/page.tsx`
+- `frontend/app/workflows/[workflowId]/page.tsx`
+- `frontend/components/workflows/workflow-list-view.tsx`
+- `frontend/components/workflows/workflow-detail-view.tsx`
+- `frontend/components/workflows/workflow-table.tsx`
+- `frontend/components/workflows/workflow-detail.tsx`
+- `frontend/components/workflows/workflow-status-badge.tsx`
+- `frontend/components/workflows/workflow-events-list.tsx`
+- `frontend/tests/workflow-api.test.ts`
+- `frontend/tests/workflow-pages.test.tsx`
+- `frontend/README.md`
+
+Behavior:
+
+- Adds workflow API client helpers for `GET /workflows`,
+  `GET /workflows/{workflow_id}`, and
+  `GET /workflows/{workflow_id}/events`.
+- Adds read-only `/workflows` list page using the existing AppShell and local
+  bearer token session.
+- Adds read-only `/workflows/[workflowId]` detail page with workflow state
+  summary and recent persisted event backlog.
+- Handles loading, empty, login-required, 401/403/404, and generic error states
+  without exposing raw backend internals.
+- Adds tests for API path construction, bearer-token attachment, list/detail
+  rendering, empty states, event backlog rendering, and bounded API errors.
+- Does not implement workflow create form, run action, WebSocket client/timeline,
+  backend changes, migrations, models, Agents, LLM UI, RAG UI, or approval/resume
+  UI.
+
+## TASK 009.5 Implementation State
+
+Deliverables:
+
+- `frontend/lib/api/workflows.ts`
+- `frontend/lib/api/types.ts`
+- `frontend/app/workflows/new/page.tsx`
+- `frontend/components/workflows/workflow-create-form.tsx`
+- `frontend/components/workflows/workflow-run-panel.tsx`
+- `frontend/components/workflows/workflow-detail-view.tsx`
+- `frontend/tests/workflow-api.test.ts`
+- `frontend/tests/workflow-create-run.test.tsx`
+- `frontend/README.md`
+
+Behavior:
+
+- Adds workflow API client helpers for `POST /api/v1/workflows` and
+  `POST /api/v1/workflows/{workflow_id}/run`.
+- Replaces `/workflows/new` with a real procurement quotation create form.
+- Builds backend-compatible workflow creation payloads using
+  `workflow_type`, optional `domain`, `request`, and `metadata`.
+- Supports manual request text, customer name, items JSON, and metadata JSON
+  with client-side validation for required text and JSON shape.
+- Shows create loading, validation, success, 401/403, and generic error states
+  without fake backend success data.
+- Adds a run action to workflow detail pages that calls the existing backend
+  `/run` endpoint, displays the returned runtime result, and refreshes workflow
+  detail/events through existing REST reads.
+- Shows run loading, success, 401/403/409, and generic error states.
+- Does not implement WebSocket client/timeline behavior, `/resume`, approval
+  continuation, backend changes, migrations, models, Agents, LLM UI, RAG UI,
+  document upload UI, or production auth hardening.
+
 ## SPEC-009 Scope
 
 - Next.js frontend application.
@@ -155,9 +223,9 @@ Behavior:
 
 ## Next Task
 
-- Review `TASK 009.3 - Dashboard Layout and Navigation`.
-- Then implement `TASK 009.4 - Workflow List and Detail Pages` only after
-  review approval.
+- Review `TASK 009.5 - Workflow Create and Run Actions`.
+- Then implement `TASK 009.6 - WebSocket Event Timeline` only after review
+  approval.
 
 ## Expected SPEC-009 Planning Quality Gate
 
@@ -184,3 +252,5 @@ browser smoke checks after the frontend project exists.
 - TASK 009.1 implementation recorded with Harness intake #66.
 - TASK 009.2 implementation recorded with Harness intake #67.
 - TASK 009.3 implementation recorded with Harness intake #68.
+- TASK 009.4 implementation recorded with Harness intake #69.
+- TASK 009.5 implementation recorded with Harness intake #70.

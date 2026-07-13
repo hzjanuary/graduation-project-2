@@ -55,21 +55,64 @@ export type WorkflowStatus =
   | "FAILED"
   | "CANCELLED";
 
+export type WorkflowType = "procurement_quotation";
+
+export interface WorkflowStateMetadata {
+  state_version?: number;
+  created_by_id?: string | null;
+  tags?: Record<string, string>;
+  attributes?: Record<string, unknown>;
+}
+
+export interface WorkflowCreateRequest {
+  workflow_type: WorkflowType;
+  domain?: string | null;
+  request: Record<string, unknown>;
+  metadata?: WorkflowStateMetadata;
+}
+
 export interface WorkflowState {
   workflow_id: string;
-  workflow_type: string;
+  workflow_type: WorkflowType | string;
   domain?: string | null;
   status: WorkflowStatus;
   request: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
+  metadata?: WorkflowStateMetadata | Record<string, unknown>;
   customer?: Record<string, unknown>;
   items?: Record<string, unknown>[];
+  planner?: Record<string, unknown>;
+  retrieval?: Record<string, unknown>;
+  quotation?: Record<string, unknown>;
+  compliance?: Record<string, unknown>;
+  validation?: Record<string, unknown>;
+  approval?: Record<string, unknown>;
+  email?: Record<string, unknown>;
   current_step?: string | null;
+  runtime_context?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
+  steps?: WorkflowStepState[];
   retry_count?: number;
-  error?: Record<string, unknown> | null;
+  error?: WorkflowError | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface WorkflowError {
+  code: string;
+  message: string;
+  failed_step?: string | null;
+  retryable?: boolean;
+  details?: Record<string, unknown>;
+}
+
+export interface WorkflowStepState {
+  name: string;
+  status: WorkflowStatus;
+  started_at?: string | null;
+  completed_at?: string | null;
+  duration_ms?: number | null;
+  output?: Record<string, unknown>;
+  error?: WorkflowError | null;
 }
 
 export interface WorkflowResponse {
@@ -104,8 +147,38 @@ export interface WorkflowEventListResponse {
   offset: number;
 }
 
+export type RuntimeStage =
+  | "planner"
+  | "retrieval"
+  | "quotation"
+  | "compliance"
+  | "validation"
+  | "approval"
+  | "email_preparation";
+
+export interface RuntimeWorkflowState {
+  workflow_id: string;
+  workflow_type: WorkflowType | string;
+  domain?: string | null;
+  status: WorkflowStatus;
+  request: Record<string, unknown>;
+  metadata?: WorkflowStateMetadata | Record<string, unknown>;
+  customer?: Record<string, unknown>;
+  items?: Record<string, unknown>[];
+  current_stage?: RuntimeStage | null;
+  completed_stages?: RuntimeStage[];
+  failed_stage?: RuntimeStage | null;
+  runtime_context?: Record<string, unknown>;
+  stage_outputs?: Partial<Record<RuntimeStage, Record<string, unknown>>>;
+  outputs?: Record<string, unknown>;
+  steps?: WorkflowStepState[];
+  retry_count?: number;
+  error?: WorkflowError | null;
+  events?: Record<string, unknown>[];
+}
+
 export interface RuntimeWorkflowResult {
-  state: Record<string, unknown>;
+  state: RuntimeWorkflowState;
   completed: boolean;
   failed: boolean;
   message?: string | null;
