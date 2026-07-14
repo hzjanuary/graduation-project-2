@@ -481,6 +481,12 @@ GET  /api/v1/workflows/{workflow_id}/events
                                       Admin, Manager, Sales, Legal, Finance, Viewer
 POST /api/v1/workflows/{workflow_id}/run
                                       Admin, Manager
+POST /api/v1/workflows/{workflow_id}/approval
+                                      Admin, Manager
+GET  /api/v1/workflows/{workflow_id}/approval/history
+                                      Admin, Manager, Sales, Legal, Finance, Viewer
+POST /api/v1/workflows/{workflow_id}/resume
+                                      Admin, Manager (501 boundary until TASK 012.4)
 GET  /api/v1/workflows/_meta           authenticated workflow readers
 ```
 
@@ -497,13 +503,19 @@ state mismatches to `400`, preserves existing service-level audit behavior, and
 commits only after successful service execution. Workflow events read uses
 `WorkflowEventService`, returns a direct `WorkflowEventListResponse`, supports
 minimal `limit` and `offset` query parameters, maps missing workflows to `404`,
-and does not commit because it is a read-only route.
+and does not commit because it is a read-only route. Approval decision writes
+use `ApprovalService`, return direct approval response schemas, map approval
+lifecycle conflicts to `409`, commit only after successful service execution,
+and persist approval history, WorkflowEvent records, and AuditLog records
+through existing service foundations. Approval history reads are read-only. The
+resume route is an authenticated and RBAC-protected `501` boundary until
+TASK 012.4 implements runtime continuation.
 
 The SPEC-007 workflow API slices use direct response models and keep workflow
 business logic inside services. Runtime execution is exposed separately by
-SPEC-006 through `POST /api/v1/workflows/{workflow_id}/run`. Resume routes,
-audit query APIs, event streaming, Agent calls, and real LLM-backed runtime
-behavior remain deferred.
+SPEC-006 through `POST /api/v1/workflows/{workflow_id}/run`. Runtime resume
+execution, audit query APIs, Agent calls, and real LLM-backed runtime behavior
+remain deferred.
 
 ## Runtime State Adapter
 
@@ -565,9 +577,8 @@ The workflow runtime API endpoint `POST /api/v1/workflows/{workflow_id}/run`
 uses `RuntimeService`, requires Admin or Manager access, passes the authenticated
 user as runtime actor metadata, commits only at the API boundary after
 successful service execution, and returns a direct `WorkflowRunResponse`. The
-deterministic runtime stops at `WAITING_APPROVAL`; `/resume`, event streaming,
-real LLM calls, Agent execution, email sending, and approval decisioning remain
-deferred.
+deterministic runtime stops at `WAITING_APPROVAL`; runtime resume execution,
+real LLM calls, Agent execution, and email sending remain deferred.
 
 ## Event Streaming Contracts
 

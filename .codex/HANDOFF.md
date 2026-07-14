@@ -33,7 +33,7 @@ Planned tasks:
   Implemented
 - `TASK 012.2 - Backend Approval Service and Audit/Event Persistence` -
   Implemented
-- `TASK 012.3 - Approval and Resume API Endpoints with RBAC`
+- `TASK 012.3 - Approval and Resume API Endpoints with RBAC` - Implemented
 - `TASK 012.4 - Runtime Resume Implementation`
 - `TASK 012.5 - Frontend Approval Panel and API Client`
 - `TASK 012.6 - Approval Timeline, Demo Runbook, and Seed Updates`
@@ -112,6 +112,41 @@ Behavior:
 - Does not add approval/resume API endpoints, runtime resume execution,
   frontend behavior, migrations, model changes, new workflow statuses, or
   auth/RBAC policy changes.
+
+## TASK 012.3 Implementation State
+
+Deliverables:
+
+- `backend/app/api/v1/workflows.py` updated
+- `backend/app/core/dependencies.py` updated
+- `backend/app/tests/test_workflow_api_approval.py`
+- `backend/app/tests/test_workflow_api_router.py` updated
+- `backend/app/tests/test_workflow_api_runtime_run.py` updated
+- `backend/README.md` updated
+
+Behavior:
+
+- Adds `POST /api/v1/workflows/{workflow_id}/approval` for authenticated
+  Admin/Manager approval decisions through `ApprovalService`.
+- Adds `GET /api/v1/workflows/{workflow_id}/approval/history` for authenticated
+  workflow read roles.
+- Adds `POST /api/v1/workflows/{workflow_id}/resume` as a typed, authenticated,
+  Admin/Manager-only `501` boundary. It does not call `RuntimeService`, mutate
+  workflow state, or execute resume.
+- Keeps approval endpoint transaction ownership at the API route boundary:
+  commit only after successful `ApprovalService` execution.
+- Maps missing workflows to `404`, approval invalid-state/terminal/duplicate
+  lifecycle errors to `409`, and approval permission failures to `403`.
+- Adds route tests for approve, reject, request_changes, approval history,
+  duplicate final decisions, invalid state, terminal state, missing workflow,
+  unauthenticated requests, RBAC denial, resume boundary behavior, and
+  `/run` route stability.
+- Uses dependency injection for `ApprovalService` and reuses the configured
+  `WorkflowEventService` so persisted approval events can use the existing
+  event publisher path in production.
+- Does not implement runtime resume execution, change `/run`, change frontend
+  behavior, add migrations/models, add new workflow statuses, send email, or
+  introduce a global response envelope.
 
 Scope:
 

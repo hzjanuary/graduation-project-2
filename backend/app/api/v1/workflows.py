@@ -16,6 +16,19 @@ from fastapi import (
 from pydantic import BaseModel, ConfigDict
 
 from app.api.v1.workflow_errors import workflow_error_detail, workflow_http_exception
+from app.approvals import (
+    ApprovalDecisionRequest,
+    ApprovalDecisionResponse,
+    ApprovalHistoryResponse,
+    ApprovalInvalidStateError,
+    ApprovalPermissionDeniedError,
+    ApprovalService,
+    ApprovalTerminalStateError,
+    DuplicateFinalApprovalDecisionError,
+    ResumeNotAllowedError,
+    WorkflowResumeRequest,
+    WorkflowResumeResponse,
+)
 from app.auth.rbac import (
     RoleDependency,
     RoleName,
@@ -25,6 +38,7 @@ from app.auth.rbac import (
 )
 from app.core.dependencies import (
     DbSessionDependency,
+    provide_approval_service,
     provide_runtime_service,
     provide_workflow_event_service,
     provide_workflow_event_subscriber,
@@ -73,6 +87,10 @@ RuntimeServiceDependency = Annotated[
     RuntimeService,
     Depends(provide_runtime_service),
 ]
+ApprovalServiceDependency = Annotated[
+    ApprovalService,
+    Depends(provide_approval_service),
+]
 
 WORKFLOW_FULL_ACCESS_ROLES: tuple[RoleName, ...] = (
     RoleName.ADMIN,
@@ -118,6 +136,9 @@ WORKFLOW_PLANNED_ENDPOINTS: tuple[str, ...] = (
     "PATCH /api/v1/workflows/{workflow_id}/state",
     "GET /api/v1/workflows/{workflow_id}/events",
     "POST /api/v1/workflows/{workflow_id}/run",
+    "POST /api/v1/workflows/{workflow_id}/approval",
+    "GET /api/v1/workflows/{workflow_id}/approval/history",
+    "POST /api/v1/workflows/{workflow_id}/resume",
     "WS /api/v1/workflows/{workflow_id}/stream",
 )
 
@@ -283,6 +304,85 @@ async def list_workflow_events(
 
 
 @router.post(
+    "/{workflow_id}/approval",
+    response_model=ApprovalDecisionResponse,
+    summary="Submit workflow approval decision",
+)
+async def submit_workflow_approval(
+    workflow_id: UUID,
+    payload: ApprovalDecisionRequest,
+    approval_service: ApprovalServiceDependency,
+    session: DbSessionDependency,
+    current_user: WorkflowFullAccessDependency,
+) -> ApprovalDecisionResponse:
+    """Persist a human approval decision for one workflow."""
+    try:
+        response = await approval_service.submit_approval_decision(
+            workflow_id,
+            payload,
+            current_user,
+        )
+    except (
+        ApprovalInvalidStateError,
+        ApprovalTerminalStateError,
+        DuplicateFinalApprovalDecisionError,
+        InvalidWorkflowTransitionError,
+    ) as error:
+        raise approval_conflict_http_exception(error) from error
+    except ApprovalPermissionDeniedError as error:
+        raise approval_forbidden_http_exception() from error
+    except WorkflowNotFoundError as error:
+        raise workflow_http_exception(error) from error
+
+    await session.commit()
+    return response
+
+
+@router.get(
+    "/{workflow_id}/approval/history",
+    response_model=ApprovalHistoryResponse,
+    summary="Get workflow approval history",
+)
+async def get_workflow_approval_history(
+    workflow_id: UUID,
+    _current_user: WorkflowReadAccessDependency,
+    approval_service: ApprovalServiceDependency,
+) -> ApprovalHistoryResponse:
+    """Return approval history for one workflow without mutating state."""
+    try:
+        return await approval_service.get_approval_history(workflow_id)
+    except WorkflowNotFoundError as error:
+        raise workflow_http_exception(error) from error
+
+
+@router.post(
+    "/{workflow_id}/resume",
+    response_model=WorkflowResumeResponse,
+    summary="Resume workflow after approval",
+)
+async def resume_workflow_after_approval(
+    workflow_id: UUID,
+    payload: WorkflowResumeRequest,
+    _current_user: WorkflowFullAccessDependency,
+) -> WorkflowResumeResponse:
+    """Reject runtime resume until TASK 012.4 implements execution."""
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=workflow_error_detail(
+            code="workflow_resume_not_implemented",
+            message=(
+                "Workflow resume execution is not implemented yet. "
+                "Runtime resume is scoped to TASK 012.4."
+            ),
+            details={
+                "workflow_id": str(workflow_id),
+                "request_id": payload.request_id,
+            },
+        ),
+    )
+
+
+@router.post(
     "/{workflow_id}/run",
     response_model=WorkflowRunResponse,
     summary="Run workflow",
@@ -381,6 +481,40 @@ def require_workflow_read_access() -> RoleDependency:
     return require_roles(*WORKFLOW_READ_ROLES)
 
 
+def approval_conflict_http_exception(error: Exception) -> HTTPException:
+    """Return a safe conflict response for approval lifecycle errors."""
+    code = "approval_lifecycle_conflict"
+    if isinstance(error, ApprovalInvalidStateError):
+        code = "approval_invalid_state"
+    elif isinstance(error, ApprovalTerminalStateError):
+        code = "approval_terminal_state"
+    elif isinstance(error, DuplicateFinalApprovalDecisionError):
+        code = "approval_duplicate_final_decision"
+    elif isinstance(error, InvalidWorkflowTransitionError):
+        code = "invalid_workflow_transition"
+    elif isinstance(error, ResumeNotAllowedError):
+        code = "workflow_resume_not_allowed"
+
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=workflow_error_detail(
+            code=code,
+            message=str(error),
+        ),
+    )
+
+
+def approval_forbidden_http_exception() -> HTTPException:
+    """Return a safe forbidden response for approval policy failures."""
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=workflow_error_detail(
+            code="approval_forbidden",
+            message="Insufficient permissions for approval decision.",
+        ),
+    )
+
+
 async def require_workflow_stream_access(
     websocket: WebSocket,
     session: DbSessionDependency,
@@ -455,6 +589,7 @@ __all__ = [
     "WORKFLOW_READ_ROLES",
     "WORKFLOW_STREAM_BACKLOG_LIMIT",
     "RuntimeServiceDependency",
+    "ApprovalServiceDependency",
     "WorkflowCreateAccessDependency",
     "WorkflowEventServiceDependency",
     "WorkflowEventSubscriberDependency",
@@ -462,6 +597,8 @@ __all__ = [
     "WorkflowReadAccessDependency",
     "WorkflowRouterMetadata",
     "WorkflowServiceDependency",
+    "approval_conflict_http_exception",
+    "approval_forbidden_http_exception",
     "require_workflow_create_access",
     "require_workflow_full_access",
     "require_workflow_read_access",

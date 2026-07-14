@@ -17,8 +17,10 @@ from app.api.v1.workflows import (
     require_workflow_read_access,
     router,
 )
+from app.approvals import ApprovalService
 from app.auth.rbac import RoleName
 from app.core.dependencies import (
+    provide_approval_service,
     provide_runtime_service,
     provide_workflow_event_service,
     provide_workflow_service,
@@ -64,6 +66,9 @@ def test_create_app_registers_completed_spec_007_workflow_routes() -> None:
         "/api/v1/workflows/{workflow_id}/state",
         "/api/v1/workflows/{workflow_id}/events",
         "/api/v1/workflows/{workflow_id}/run",
+        "/api/v1/workflows/{workflow_id}/approval",
+        "/api/v1/workflows/{workflow_id}/approval/history",
+        "/api/v1/workflows/{workflow_id}/resume",
         "/api/v1/workflows/{workflow_id}/stream",
         "/api/v1/workflows/_meta",
     }
@@ -87,6 +92,21 @@ def test_workflow_openapi_metadata_for_completed_spec_007_routes() -> None:
         ("/api/v1/workflows/{workflow_id}/state", "patch", "Update workflow state"),
         ("/api/v1/workflows/{workflow_id}/events", "get", "List workflow events"),
         ("/api/v1/workflows/{workflow_id}/run", "post", "Run workflow"),
+        (
+            "/api/v1/workflows/{workflow_id}/approval",
+            "post",
+            "Submit workflow approval decision",
+        ),
+        (
+            "/api/v1/workflows/{workflow_id}/approval/history",
+            "get",
+            "Get workflow approval history",
+        ),
+        (
+            "/api/v1/workflows/{workflow_id}/resume",
+            "post",
+            "Resume workflow after approval",
+        ),
     }
 
     for path, method, summary in expected_operations:
@@ -95,12 +115,12 @@ def test_workflow_openapi_metadata_for_completed_spec_007_routes() -> None:
         assert operation["summary"] == summary
 
 
-def test_deferred_workflow_operation_routes_are_not_registered_yet() -> None:
+def test_future_deferred_workflow_operation_routes_are_not_registered_yet() -> None:
     app = create_app()
     route_paths = _route_paths(app.routes)
 
     deferred_paths = {
-        "/api/v1/workflows/{workflow_id}/resume",
+        "/api/v1/workflows/{workflow_id}/cancel",
     }
 
     assert route_paths.isdisjoint(deferred_paths)
@@ -120,6 +140,14 @@ def test_workflow_service_dependency_providers_return_services() -> None:
             provide_workflow_event_service(session),
         ),
         RuntimeService,
+    )
+    assert isinstance(
+        provide_approval_service(
+            session,
+            provide_workflow_service(session),
+            provide_workflow_event_service(session),
+        ),
+        ApprovalService,
     )
 
 

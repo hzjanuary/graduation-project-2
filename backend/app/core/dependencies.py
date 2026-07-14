@@ -1,7 +1,7 @@
 """Application dependency helpers."""
 
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +20,9 @@ from app.streaming import (
 )
 from app.workflows.events import WorkflowEventService
 from app.workflows.service import WorkflowService
+
+if TYPE_CHECKING:
+    from app.approvals.service import ApprovalService
 
 
 def provide_settings() -> Settings:
@@ -74,6 +77,24 @@ def provide_workflow_event_service(
 ) -> WorkflowEventService:
     """Provide workflow event service bound to the request session."""
     return WorkflowEventService(session, publisher=publisher)
+
+
+def provide_approval_service(
+    session: DbSessionDependency,
+    workflow_service: Annotated[WorkflowService, Depends(provide_workflow_service)],
+    workflow_event_service: Annotated[
+        WorkflowEventService,
+        Depends(provide_workflow_event_service),
+    ],
+) -> "ApprovalService":
+    """Provide approval service bound to workflow services and the request session."""
+    from app.approvals.service import ApprovalService
+
+    return ApprovalService(
+        session,
+        workflow_service=workflow_service,
+        workflow_event_service=workflow_event_service,
+    )
 
 
 def provide_runtime_service(

@@ -385,7 +385,7 @@ def test_workflow_stream_rejects_unauthenticated_connection() -> None:
     assert subscriber.subscribed_workflow_ids == []
 
 
-def test_resume_and_sse_stream_routes_remain_absent(
+def test_deferred_stream_and_event_routes_remain_absent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     event_service = FakeWorkflowEventService([])
@@ -395,7 +395,7 @@ def test_resume_and_sse_stream_routes_remain_absent(
     route_methods = route_methods_for(app.routes)
 
     assert "/api/v1/workflows/{workflow_id}/stream" in route_paths
-    assert "/api/v1/workflows/{workflow_id}/resume" not in route_paths
+    assert "/api/v1/workflows/{workflow_id}/resume" in route_paths
     assert "/api/v1/workflows/{workflow_id}/stream/sse" not in route_paths
     assert "/api/v1/workflows/{workflow_id}/tokens" not in route_paths
     assert "/api/v1/workflows/{workflow_id}/agent-thoughts" not in route_paths
