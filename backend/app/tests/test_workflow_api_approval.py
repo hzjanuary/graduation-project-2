@@ -1,6 +1,7 @@
 """API tests for workflow approval and resume boundary endpoints."""
 
 from collections.abc import AsyncIterator, Sequence
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import pytest
@@ -13,6 +14,9 @@ from app.approvals import (
     APPROVAL_CHANGES_REQUESTED_EVENT,
     APPROVAL_DECISION_AUDIT_ACTION,
     APPROVAL_REJECTED_EVENT,
+    WORKFLOW_RESUME_FAILED_EVENT,
+    WORKFLOW_RESUME_REQUESTED_EVENT,
+    WORKFLOW_RESUMED_EVENT,
     ApprovalService,
 )
 from app.auth import create_access_token, hash_password
@@ -21,7 +25,7 @@ from app.config import Settings, get_settings
 from app.core.dependencies import (
     provide_approval_service,
     provide_db_session,
-    provide_runtime_service,
+    provide_workflow_event_service,
 )
 from app.db import create_database_engine, create_session_factory
 from app.main import create_app
@@ -71,12 +75,14 @@ async def client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
             workflow_event_service=workflow_event_service,
         )
 
-    def fail_runtime_service() -> object:
-        raise AssertionError("Runtime service must not be used by approval endpoints")
+    def override_workflow_event_service() -> WorkflowEventService:
+        return WorkflowEventService(db_session, publisher=None)
 
     app.dependency_overrides[provide_db_session] = override_db_session
     app.dependency_overrides[provide_approval_service] = override_approval_service
-    app.dependency_overrides[provide_runtime_service] = fail_runtime_service
+    app.dependency_overrides[provide_workflow_event_service] = (
+        override_workflow_event_service
+    )
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client
@@ -398,25 +404,181 @@ async def test_read_roles_can_read_approval_history(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("role_name", [RoleName.ADMIN, RoleName.MANAGER])
-async def test_resume_boundary_requires_allowed_role_and_does_not_call_runtime(
+async def test_resume_after_approval_requires_allowed_role_and_completes_workflow(
     client: AsyncClient,
     db_session: AsyncSession,
     role_name: RoleName,
 ) -> None:
     user = await create_user_with_roles(db_session, role_names=[role_name])
-    workflow_id = uuid4()
+    workflow_id = await create_waiting_workflow(
+        db_session,
+        domain=f"{TEST_DOMAIN_PREFIX}-resume-{role_name.value}",
+    )
+    await client.post(
+        f"/api/v1/workflows/{workflow_id}/approval",
+        headers=auth_headers(user),
+        json={"decision": "approve", "comment": "Approved for resume."},
+    )
 
     response = await client.post(
         f"/api/v1/workflows/{workflow_id}/resume",
         headers=auth_headers(user),
-        json={"request_id": "resume-boundary"},
+        json={
+            "request_id": "resume-api-success",
+            "metadata": {
+                "operator_note": "resume through API",
+                "api_key": "must-not-persist",
+            },
+        },
     )
     data = response.json()
+    workflow = await db_session.get(Workflow, workflow_id)
+    events = await list_workflow_events(db_session, workflow_id)
+    event_types = [event.event_type for event in events]
 
-    assert response.status_code == 501
-    assert data["detail"]["code"] == "workflow_resume_not_implemented"
-    assert data["detail"]["details"]["workflow_id"] == str(workflow_id)
-    assert data["detail"]["details"]["request_id"] == "resume-boundary"
+    assert response.status_code == 200
+    assert data["workflow_id"] == str(workflow_id)
+    assert data["previous_status"] == WorkflowStatus.APPROVED
+    assert data["next_status"] == WorkflowStatus.COMPLETED
+    assert data["resumed"] is True
+    assert data["request_id"] == "resume-api-success"
+    assert workflow is not None
+    assert workflow.status is WorkflowStatus.COMPLETED
+    email_state = cast(dict[str, Any], workflow.state_payload["email"])
+    assert email_state["email_sent"] is False
+    assert event_types[-4:] == [
+        WORKFLOW_RESUME_REQUESTED_EVENT,
+        "workflow.node.started",
+        "workflow.node.completed",
+        WORKFLOW_RESUMED_EVENT,
+    ]
+    assert events[-4].payload["metadata"] == {"operator_note": "resume through API"}
+    assert "must-not-persist" not in str(workflow.state_payload)
+    assert "api_key" not in str(events[-4].payload)
+
+
+@pytest.mark.asyncio
+async def test_resume_without_final_approval_returns_409(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    user = await create_user_with_roles(db_session, role_names=[RoleName.MANAGER])
+    workflow_id = await create_waiting_workflow(
+        db_session,
+        domain=f"{TEST_DOMAIN_PREFIX}-resume-no-approval",
+    )
+
+    response = await client.post(
+        f"/api/v1/workflows/{workflow_id}/resume",
+        headers=auth_headers(user),
+        json={},
+    )
+    data = response.json()
+    events = await list_workflow_events(db_session, workflow_id)
+
+    assert response.status_code == 409
+    assert data["detail"]["code"] == "workflow_resume_not_allowed"
+    assert events[-1].event_type == WORKFLOW_RESUME_FAILED_EVENT
+
+
+@pytest.mark.asyncio
+async def test_resume_after_reject_returns_409(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    user = await create_user_with_roles(db_session, role_names=[RoleName.ADMIN])
+    workflow_id = await create_waiting_workflow(
+        db_session,
+        domain=f"{TEST_DOMAIN_PREFIX}-resume-rejected",
+    )
+    await client.post(
+        f"/api/v1/workflows/{workflow_id}/approval",
+        headers=auth_headers(user),
+        json={"decision": "reject", "comment": "Do not continue."},
+    )
+
+    response = await client.post(
+        f"/api/v1/workflows/{workflow_id}/resume",
+        headers=auth_headers(user),
+        json={},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "workflow_resume_not_allowed"
+
+
+@pytest.mark.asyncio
+async def test_resume_after_request_changes_only_returns_409(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    user = await create_user_with_roles(db_session, role_names=[RoleName.MANAGER])
+    workflow_id = await create_waiting_workflow(
+        db_session,
+        domain=f"{TEST_DOMAIN_PREFIX}-resume-changes",
+    )
+    await client.post(
+        f"/api/v1/workflows/{workflow_id}/approval",
+        headers=auth_headers(user),
+        json={"decision": "request_changes", "comment": "Revise the package."},
+    )
+
+    response = await client.post(
+        f"/api/v1/workflows/{workflow_id}/resume",
+        headers=auth_headers(user),
+        json={},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "workflow_resume_not_allowed"
+
+
+@pytest.mark.asyncio
+async def test_duplicate_resume_returns_409(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    user = await create_user_with_roles(db_session, role_names=[RoleName.ADMIN])
+    workflow_id = await create_waiting_workflow(
+        db_session,
+        domain=f"{TEST_DOMAIN_PREFIX}-resume-duplicate",
+    )
+    await client.post(
+        f"/api/v1/workflows/{workflow_id}/approval",
+        headers=auth_headers(user),
+        json={"decision": "approve", "comment": "Approved."},
+    )
+    first_response = await client.post(
+        f"/api/v1/workflows/{workflow_id}/resume",
+        headers=auth_headers(user),
+        json={},
+    )
+    second_response = await client.post(
+        f"/api/v1/workflows/{workflow_id}/resume",
+        headers=auth_headers(user),
+        json={},
+    )
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 409
+    assert second_response.json()["detail"]["code"] == "workflow_resume_not_allowed"
+
+
+@pytest.mark.asyncio
+async def test_missing_workflow_resume_returns_404(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    user = await create_user_with_roles(db_session, role_names=[RoleName.MANAGER])
+
+    response = await client.post(
+        f"/api/v1/workflows/{uuid4()}/resume",
+        headers=auth_headers(user),
+        json={},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "workflow_not_found"
 
 
 @pytest.mark.asyncio

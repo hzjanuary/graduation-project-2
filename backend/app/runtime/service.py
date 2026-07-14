@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 from app.llm.contracts import LLMErrorCategory
@@ -34,6 +34,13 @@ from app.workflows.exceptions import (
 )
 from app.workflows.schemas import WorkflowError, WorkflowEventCreate, WorkflowState
 from app.workflows.service import WorkflowService
+
+if TYPE_CHECKING:
+    from app.approvals.schemas import ApprovalRecord, WorkflowResumeRequest
+
+POST_APPROVAL_RUNTIME_STAGES: tuple[RuntimeStage, ...] = (
+    RuntimeStage.EMAIL_PREPARATION,
+)
 
 PRE_APPROVAL_RUNTIME_STAGES: tuple[RuntimeStage, ...] = (
     RuntimeStage.PLANNER,
@@ -251,6 +258,203 @@ class RuntimeService:
             message="Workflow is waiting for approval.",
         )
 
+    async def resume_workflow_after_approval(
+        self,
+        workflow_id: UUID,
+        request: WorkflowResumeRequest | None = None,
+        *,
+        actor_type: str | None = None,
+        actor_id: UUID | None = None,
+    ) -> RuntimeWorkflowResult:
+        """Resume the bounded post-approval runtime continuation."""
+        from app.approvals.events import (
+            WORKFLOW_RESUME_FAILED_EVENT,
+            WORKFLOW_RESUME_REQUESTED_EVENT,
+            WORKFLOW_RESUMED_EVENT,
+        )
+        from app.approvals.lifecycle import validate_resume_allowed
+        from app.approvals.schemas import WorkflowResumeRequest
+
+        resume_request = request or WorkflowResumeRequest()
+        workflow_state = await self.workflow_service.get_workflow(workflow_id)
+        if workflow_state is None:
+            raise WorkflowNotFoundError(f"Workflow {workflow_id} was not found")
+
+        approval_records = _approval_records_from_state(workflow_state)
+        try:
+            validate_resume_allowed(
+                status=workflow_state.status,
+                records=approval_records,
+            )
+        except Exception:
+            await self._append_runtime_event(
+                workflow_id,
+                WORKFLOW_RESUME_FAILED_EVENT,
+                WorkflowEventStatus.FAILED,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                message="Workflow resume was not allowed.",
+                payload={
+                    "status": workflow_state.status.value,
+                    "request_id": resume_request.request_id,
+                },
+            )
+            raise
+
+        await self._append_runtime_event(
+            workflow_id,
+            WORKFLOW_RESUME_REQUESTED_EVENT,
+            WorkflowEventStatus.STARTED,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            message="Workflow resume requested after approval.",
+            payload={
+                "status": workflow_state.status.value,
+                "request_id": resume_request.request_id,
+                "metadata": _safe_resume_metadata(resume_request.metadata),
+            },
+        )
+
+        current_workflow_state = await self.workflow_service.transition_workflow_status(
+            workflow_id,
+            WorkflowStatus.GENERATING_EMAIL,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            reason="Runtime resume entered email preparation stage.",
+        )
+        runtime_state = workflow_state_to_runtime_state(current_workflow_state)
+        runtime_payload = self._payload_with_status(
+            cast(RuntimeStatePayload, runtime_state.model_dump(mode="json")),
+            WorkflowStatus.GENERATING_EMAIL,
+        )
+        resume_graph = build_workflow_graph(
+            self.node_handlers,
+            stages=POST_APPROVAL_RUNTIME_STAGES,
+        )
+        stream = iter(resume_graph.stream(runtime_payload))
+        stage = RuntimeStage.EMAIL_PREPARATION
+
+        try:
+            await self._append_node_event(
+                workflow_id,
+                stage,
+                "workflow.node.started",
+                WorkflowEventStatus.STARTED,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                workflow_status=WorkflowStatus.GENERATING_EMAIL,
+                message="Runtime stage email_preparation started.",
+                payload=self._llm_stage_event_payload(stage),
+            )
+            runtime_payload = await self._execute_stage(
+                stream,
+                runtime_payload,
+                stage,
+            )
+            runtime_payload = self._payload_with_status(
+                runtime_payload,
+                WorkflowStatus.GENERATING_EMAIL,
+            )
+            stage_runtime_state = RuntimeWorkflowState.model_validate(runtime_payload)
+            await self._append_node_event(
+                workflow_id,
+                stage,
+                "workflow.node.completed",
+                WorkflowEventStatus.COMPLETED,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                workflow_status=WorkflowStatus.GENERATING_EMAIL,
+                message="Runtime stage email_preparation completed.",
+                stage_output=stage_runtime_state.stage_outputs.get(stage),
+                payload=self._llm_stage_event_payload(stage),
+            )
+        except Exception as exc:
+            await self._handle_runtime_failure(
+                workflow_id,
+                current_workflow_state,
+                runtime_payload,
+                stage,
+                exc,
+                actor_type=actor_type,
+                actor_id=actor_id,
+            )
+            await self._append_runtime_event(
+                workflow_id,
+                WORKFLOW_RESUME_FAILED_EVENT,
+                WorkflowEventStatus.FAILED,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                message="Workflow resume failed.",
+                payload={
+                    "failed_stage": stage.value,
+                    "status": WorkflowStatus.GENERATING_EMAIL.value,
+                    "request_id": resume_request.request_id,
+                    **self._safe_runtime_error_payload(exc),
+                },
+            )
+            raise WorkflowRuntimeNodeError(stage, str(exc)) from exc
+
+        completed_workflow_state = (
+            await self.workflow_service.transition_workflow_status(
+                workflow_id,
+                WorkflowStatus.COMPLETED,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                reason="Runtime resume completed post-approval continuation.",
+            )
+        )
+        final_runtime_state = RuntimeWorkflowState.model_validate(
+            runtime_payload,
+        ).model_copy(update={"status": completed_workflow_state.status})
+        updated_workflow_state = runtime_state_to_workflow_state(
+            final_runtime_state,
+            completed_workflow_state,
+        )
+        updated_workflow_state = updated_workflow_state.model_copy(
+            update={
+                "runtime_context": {
+                    **updated_workflow_state.runtime_context,
+                    "resume_state": {
+                        "resumed": True,
+                        "resumed_by": str(actor_id) if actor_id else None,
+                        "request_id": resume_request.request_id,
+                        "completed_stages": [
+                            stage.value for stage in POST_APPROVAL_RUNTIME_STAGES
+                        ],
+                    },
+                },
+            },
+        )
+        await self.workflow_service.update_workflow_state(
+            workflow_id,
+            updated_workflow_state,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            reason="Runtime persisted post-approval resume state.",
+        )
+        await self._append_runtime_event(
+            workflow_id,
+            WORKFLOW_RESUMED_EVENT,
+            WorkflowEventStatus.COMPLETED,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            message="Workflow resume completed.",
+            payload={
+                "status": WorkflowStatus.COMPLETED.value,
+                "request_id": resume_request.request_id,
+                "completed_stages": [
+                    stage.value for stage in POST_APPROVAL_RUNTIME_STAGES
+                ],
+            },
+        )
+
+        return RuntimeWorkflowResult(
+            state=final_runtime_state,
+            completed=True,
+            failed=False,
+            message="Workflow resume completed.",
+        )
+
     def _next_stage_payload(
         self,
         stream: Any,
@@ -270,7 +474,7 @@ class RuntimeService:
         runtime_payload: RuntimeStatePayload,
         stage: RuntimeStage,
     ) -> RuntimeStatePayload:
-        if self.llm_adapter is None:
+        if self.llm_adapter is None or stage is RuntimeStage.EMAIL_PREPARATION:
             return self._next_stage_payload(stream, stage)
 
         runtime_state = RuntimeWorkflowState.model_validate(runtime_payload)
@@ -508,6 +712,7 @@ class RuntimeService:
 
 
 __all__ = [
+    "POST_APPROVAL_RUNTIME_STAGES",
     "PRE_APPROVAL_RUNTIME_STAGES",
     "RUNTIME_STAGE_STATUSES",
     "RuntimeService",
@@ -515,3 +720,39 @@ __all__ = [
     "WorkflowRuntimeNodeError",
     "WorkflowRuntimePreconditionError",
 ]
+
+
+def _approval_records_from_state(state: WorkflowState) -> tuple[ApprovalRecord, ...]:
+    from app.approvals.schemas import ApprovalRecord
+
+    raw_records = state.approval.get("approval_history", ())
+    if not isinstance(raw_records, list | tuple):
+        return ()
+    return tuple(ApprovalRecord.model_validate(record) for record in raw_records)
+
+
+def _safe_resume_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in metadata.items()
+        if not _is_sensitive_resume_key(key)
+    }
+
+
+def _is_sensitive_resume_key(key: str) -> bool:
+    normalized = key.lower()
+    return any(
+        part in normalized
+        for part in (
+            "api_key",
+            "apikey",
+            "authorization",
+            "password",
+            "provider_payload",
+            "raw_provider_payload",
+            "request_payload",
+            "secret",
+            "state_payload",
+            "token",
+        )
+    )

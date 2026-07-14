@@ -46,7 +46,11 @@ from app.core.dependencies import (
 )
 from app.models import User
 from app.models.enums import WorkflowStatus
-from app.runtime.service import RuntimeService, WorkflowRuntimePreconditionError
+from app.runtime.service import (
+    RuntimeService,
+    WorkflowRuntimeNodeError,
+    WorkflowRuntimePreconditionError,
+)
 from app.schemas.workflows_api import (
     WorkflowCreateRequest,
     WorkflowEventListResponse,
@@ -363,22 +367,40 @@ async def get_workflow_approval_history(
 async def resume_workflow_after_approval(
     workflow_id: UUID,
     payload: WorkflowResumeRequest,
-    _current_user: WorkflowFullAccessDependency,
+    runtime_service: RuntimeServiceDependency,
+    session: DbSessionDependency,
+    current_user: WorkflowFullAccessDependency,
 ) -> WorkflowResumeResponse:
-    """Reject runtime resume until TASK 012.4 implements execution."""
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail=workflow_error_detail(
-            code="workflow_resume_not_implemented",
-            message=(
-                "Workflow resume execution is not implemented yet. "
-                "Runtime resume is scoped to TASK 012.4."
+    """Resume one approved workflow through the bounded post-approval runtime."""
+    try:
+        result = await runtime_service.resume_workflow_after_approval(
+            workflow_id,
+            payload,
+            actor_type="user",
+            actor_id=current_user.id,
+        )
+    except WorkflowNotFoundError as error:
+        raise workflow_http_exception(error) from error
+    except (ResumeNotAllowedError, InvalidWorkflowTransitionError) as error:
+        raise approval_conflict_http_exception(error) from error
+    except WorkflowRuntimeNodeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=workflow_error_detail(
+                code="workflow_runtime_resume_failed",
+                message="Workflow resume failed during runtime continuation.",
+                details={"failed_stage": error.stage.value},
             ),
-            details={
-                "workflow_id": str(workflow_id),
-                "request_id": payload.request_id,
-            },
-        ),
+        ) from error
+
+    await session.commit()
+    return WorkflowResumeResponse(
+        workflow_id=workflow_id,
+        previous_status=WorkflowStatus.APPROVED,
+        next_status=result.state.status,
+        resumed=result.completed and not result.failed,
+        message=result.message,
+        request_id=payload.request_id,
     )
 
 

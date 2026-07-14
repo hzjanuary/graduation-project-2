@@ -217,9 +217,8 @@ live in `app/llm/prompts`, `app/llm/structured_outputs.py`, and
 `app/llm/output_parser.py`. They build bounded JSON-mode `LLMChatRequest`
 objects for requirement extraction, supplier/pricing analysis, legal/compliance
 analysis, finance/risk analysis, and approval package preparation. Parser
-helpers validate returned JSON with Pydantic before any future runtime task can
-write output to workflow state. These modules do not call providers and are not
-wired into runtime execution yet.
+helpers validate returned JSON with Pydantic before runtime tasks write output
+to workflow state. These modules do not call providers directly.
 
 `LLM_RUNTIME_ENABLED=false` remains the default. When it is false, workflow
 runtime execution uses the existing deterministic LangGraph node handlers and
@@ -227,8 +226,9 @@ does not call `LLMService`. When explicitly enabled, the runtime uses
 `LLMService` through a narrow runtime adapter, builds procurement prompt
 requests, validates structured output, and writes only bounded validated output
 into workflow state. The quotation stage still does not use LLM arithmetic; it
-records a deterministic skip marker. Runtime execution still stops at
-`WAITING_APPROVAL`, and `/resume` remains deferred.
+records a deterministic skip marker. The `/run` path still stops at
+`WAITING_APPROVAL`; the separate `/resume` path can continue an approved
+workflow through the bounded email-preparation placeholder.
 
 The fake provider is deterministic and requires no network. Groq and
 OpenRouter use non-streaming OpenAI-compatible chat completion request shapes;
@@ -486,7 +486,7 @@ POST /api/v1/workflows/{workflow_id}/approval
 GET  /api/v1/workflows/{workflow_id}/approval/history
                                       Admin, Manager, Sales, Legal, Finance, Viewer
 POST /api/v1/workflows/{workflow_id}/resume
-                                      Admin, Manager (501 boundary until TASK 012.4)
+                                      Admin, Manager
 GET  /api/v1/workflows/_meta           authenticated workflow readers
 ```
 
@@ -508,14 +508,14 @@ use `ApprovalService`, return direct approval response schemas, map approval
 lifecycle conflicts to `409`, commit only after successful service execution,
 and persist approval history, WorkflowEvent records, and AuditLog records
 through existing service foundations. Approval history reads are read-only. The
-resume route is an authenticated and RBAC-protected `501` boundary until
-TASK 012.4 implements runtime continuation.
+resume route is authenticated, RBAC-protected, and calls the bounded
+post-approval runtime continuation for approved workflows only.
 
 The SPEC-007 workflow API slices use direct response models and keep workflow
-business logic inside services. Runtime execution is exposed separately by
-SPEC-006 through `POST /api/v1/workflows/{workflow_id}/run`. Runtime resume
-execution, audit query APIs, Agent calls, and real LLM-backed runtime behavior
-remain deferred.
+business logic inside services. Runtime execution is exposed separately through
+`POST /api/v1/workflows/{workflow_id}/run` and the explicit post-approval
+`POST /api/v1/workflows/{workflow_id}/resume` continuation. Audit query APIs,
+Agent calls, and unflagged real LLM-backed runtime behavior remain deferred.
 
 ## Runtime State Adapter
 
@@ -569,16 +569,20 @@ LangGraph subgraph from planner through approval, transitions lifecycle status
 through `WorkflowService`, appends runtime and node events through
 `WorkflowEventService`, persists the updated `WorkflowState`, and stops at
 `WAITING_APPROVAL`. The service keeps transactions caller-owned and does not
-call `commit()`. It does not implement `/resume`, execute email_preparation
-before approval, call LLMs or Agents, stream events to clients, create
-migrations, or modify database models.
+call `commit()`. Its separate resume method requires an approved workflow,
+executes only the bounded `email_preparation` placeholder, and transitions
+through `GENERATING_EMAIL` to `COMPLETED`. It does not execute
+email_preparation before approval, send email, call Agents, stream events to
+clients directly, create migrations, or modify database models.
 
 The workflow runtime API endpoint `POST /api/v1/workflows/{workflow_id}/run`
 uses `RuntimeService`, requires Admin or Manager access, passes the authenticated
 user as runtime actor metadata, commits only at the API boundary after
 successful service execution, and returns a direct `WorkflowRunResponse`. The
-deterministic runtime stops at `WAITING_APPROVAL`; runtime resume execution,
-real LLM calls, Agent execution, and email sending remain deferred.
+deterministic `/run` path stops at `WAITING_APPROVAL`; the `/resume` endpoint
+uses `RuntimeService.resume_workflow_after_approval()` to continue only after a
+final approve decision. Real email sending, arbitrary graph resume, Agent
+execution, and unflagged real LLM calls remain deferred.
 
 ## Event Streaming Contracts
 
@@ -631,10 +635,11 @@ status, mutate runtime state, or expose ORM/database internals. WebSocket
 clients may authenticate with an `Authorization: Bearer <token>` header or an
 `access_token` query parameter when headers are not practical.
 
-The streaming layer does not add SSE routes, change `RuntimeService` business
-logic, change `/run` behavior, or modify database models. `/resume`, frontend
-live UI, real LLM/Agent token streaming, RAG, and procurement-specific runtime
-logic remain deferred.
+The streaming layer does not add SSE routes, start workflow execution, change
+`/run` behavior, or modify database models. Approval/resume events arrive
+through the existing persisted `WorkflowEventService` publisher path. Frontend
+live UI changes, real LLM/Agent token streaming, RAG, and procurement-specific
+runtime logic remain deferred.
 
 ## Docker
 

@@ -34,7 +34,7 @@ Planned tasks:
 - `TASK 012.2 - Backend Approval Service and Audit/Event Persistence` -
   Implemented
 - `TASK 012.3 - Approval and Resume API Endpoints with RBAC` - Implemented
-- `TASK 012.4 - Runtime Resume Implementation`
+- `TASK 012.4 - Runtime Resume Implementation` - Implemented
 - `TASK 012.5 - Frontend Approval Panel and API Client`
 - `TASK 012.6 - Approval Timeline, Demo Runbook, and Seed Updates`
 - `TASK 012.7 - Human Approval Hardening and SPEC-012 Final Review`
@@ -147,6 +147,45 @@ Behavior:
 - Does not implement runtime resume execution, change `/run`, change frontend
   behavior, add migrations/models, add new workflow statuses, send email, or
   introduce a global response envelope.
+
+## TASK 012.4 Implementation State
+
+Deliverables:
+
+- `backend/app/runtime/service.py` updated
+- `backend/app/runtime/__init__.py` updated
+- `backend/app/api/v1/workflows.py` updated
+- `backend/app/tests/test_runtime_resume.py`
+- `backend/app/tests/test_workflow_api_approval.py` updated
+- `backend/README.md` updated
+
+Behavior:
+
+- Adds `RuntimeService.resume_workflow_after_approval()` for the explicit
+  post-approval continuation.
+- Requires workflow status `APPROVED` and an approving approval-history record
+  through the existing approval lifecycle helper.
+- Rejects missing, non-approved, rejected, request-changes-only, terminal, and
+  already-completed workflows with safe errors.
+- Executes only the existing deterministic `email_preparation` node; it does
+  not send real email and does not implement arbitrary graph jump/resume.
+- Transitions through existing lifecycle rules:
+  `APPROVED -> GENERATING_EMAIL -> COMPLETED`.
+- Persists bounded resume metadata in workflow runtime context and keeps
+  state/event/audit payloads free of secrets, raw provider payloads, raw
+  prompts, and unbounded input.
+- Persists resume request, node start/completion, and resume completed events
+  through `WorkflowEventService`; resume failures persist safe failure events.
+  Existing event append audit behavior records audit evidence for these events.
+- Updates `POST /api/v1/workflows/{workflow_id}/resume` to call
+  `RuntimeService` and commit at the route boundary on success.
+- Preserves `/run` behavior and contract: `/run` still stops at
+  `WAITING_APPROVAL` and never auto-resumes.
+- Keeps LLM runtime feature-flag behavior intact; email preparation remains
+  deterministic because SPEC-011 does not define an LLM email prompt yet.
+- Does not add frontend behavior, migrations, model changes, new statuses,
+  email sending, RAG/document upload, provider-management UI, token streaming,
+  or a global response envelope.
 
 Scope:
 
