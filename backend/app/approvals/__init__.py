@@ -13,6 +13,7 @@ from app.approvals.events import (
 from app.approvals.exceptions import (
     ApprovalInvalidStateError,
     ApprovalLifecycleError,
+    ApprovalPermissionDeniedError,
     ApprovalTerminalStateError,
     DuplicateFinalApprovalDecisionError,
     ResumeNotAllowedError,
@@ -46,6 +47,12 @@ from app.approvals.schemas import (
     WorkflowResumeRequest,
     WorkflowResumeResponse,
 )
+from app.approvals.service import (
+    APPROVAL_DECISION_AUDIT_ACTION,
+    APPROVAL_HISTORY_KEY,
+    APPROVAL_STATE_KEY,
+    ApprovalService,
+)
 
 __all__ = [
     "APPROVAL_APPROVED_EVENT",
@@ -68,8 +75,13 @@ __all__ = [
     "ApprovalHistoryResponse",
     "ApprovalInvalidStateError",
     "ApprovalLifecycleError",
+    "ApprovalPermissionDeniedError",
     "ApprovalRecord",
+    "ApprovalService",
     "ApprovalTerminalStateError",
+    "APPROVAL_DECISION_AUDIT_ACTION",
+    "APPROVAL_HISTORY_KEY",
+    "APPROVAL_STATE_KEY",
     "DuplicateFinalApprovalDecisionError",
     "ResumeNotAllowedError",
     "WorkflowResumeRequest",

@@ -31,6 +31,10 @@ class DuplicateFinalApprovalDecisionError(ApprovalLifecycleError):
     """Raised when a workflow already has a final approval decision."""
 
 
+class ApprovalPermissionDeniedError(ApprovalLifecycleError):
+    """Raised when an actor cannot submit an approval decision."""
+
+
 class ResumeNotAllowedError(ApprovalLifecycleError):
     """Raised when workflow resume is not allowed for the current status."""
 

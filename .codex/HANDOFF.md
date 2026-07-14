@@ -31,7 +31,8 @@ Planned tasks:
 
 - `TASK 012.1 - Approval Contracts, Lifecycle Rules, and Planning Fixtures` -
   Implemented
-- `TASK 012.2 - Backend Approval Service and Audit/Event Persistence`
+- `TASK 012.2 - Backend Approval Service and Audit/Event Persistence` -
+  Implemented
 - `TASK 012.3 - Approval and Resume API Endpoints with RBAC`
 - `TASK 012.4 - Runtime Resume Implementation`
 - `TASK 012.5 - Frontend Approval Panel and API Client`
@@ -73,6 +74,44 @@ Behavior:
 - Does not add an approval persistence service, API endpoints, runtime resume,
   frontend behavior, migrations, model changes, auth/RBAC behavior changes, or
   event publishing.
+
+## TASK 012.2 Implementation State
+
+Deliverables:
+
+- `backend/app/approvals/service.py`
+- `backend/app/approvals/__init__.py` updated
+- `backend/app/approvals/exceptions.py` updated
+- `backend/app/tests/test_approval_service.py`
+
+Behavior:
+
+- Adds explicit `ApprovalService` for backend-domain approval decisions.
+- Records `approve`, `reject`, and `request_changes` decisions using existing
+  `Workflow.state_payload`, `WorkflowEvent`, and `AuditLog` persistence.
+- Stores bounded approval history under `WorkflowState.approval` keys:
+  `approval_history` and `approval_state`.
+- Uses TASK 012.1 lifecycle helpers so approval decisions are accepted only
+  from `WAITING_APPROVAL`, terminal workflows reject approval mutation, and
+  final decisions prevent later final decisions.
+- Uses TASK 012.1 policy helpers as service-level defense in depth: Admin and
+  Manager can submit decisions; Viewer and other non-approval roles are
+  rejected in this slice.
+- Transitions `approve` to existing `APPROVED` and `reject` to existing
+  `REJECTED`; `request_changes` leaves status as `WAITING_APPROVAL` and remains
+  non-final.
+- Persists approval decision events using the existing `WorkflowEventService`
+  and TASK 012.1 approval event constants.
+- Persists a bounded `workflow.approval_decision_submitted` audit record for
+  the decision itself.
+- Flushes through existing services/session but does not commit; callers own
+  transaction boundaries.
+- Redacts sensitive approval metadata keys before storing state history and
+  avoids raw provider payloads, state payloads, request payloads, API keys, or
+  secrets in event/audit payloads.
+- Does not add approval/resume API endpoints, runtime resume execution,
+  frontend behavior, migrations, model changes, new workflow statuses, or
+  auth/RBAC policy changes.
 
 Scope:
 
