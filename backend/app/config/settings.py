@@ -7,6 +7,8 @@ from typing import Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.llm import LLMProvider, LLMSettings
+
 
 class AppEnvironment(StrEnum):
     """Supported application environments."""
@@ -71,17 +73,30 @@ class Settings(BaseSettings):
         alias="REFRESH_TOKEN_EXPIRE_DAYS",
     )
 
-    llm_provider: Literal["groq", "openrouter", "ollama", "gemini"] = Field(
-        default="ollama",
+    llm_provider: LLMProvider = Field(
+        default=LLMProvider.FAKE,
         alias="LLM_PROVIDER",
     )
+    llm_model: str = Field(default="", alias="LLM_MODEL")
+    llm_runtime_enabled: bool = Field(default=False, alias="LLM_RUNTIME_ENABLED")
+    llm_timeout_seconds: int = Field(
+        default=30,
+        ge=1,
+        le=300,
+        alias="LLM_TIMEOUT_SECONDS",
+    )
+    llm_max_retries: int = Field(default=2, ge=0, le=10, alias="LLM_MAX_RETRIES")
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
+    groq_model: str = Field(default="", alias="GROQ_MODEL")
     openrouter_api_key: str = Field(default="", alias="OPENROUTER_API_KEY")
+    openrouter_model: str = Field(default="", alias="OPENROUTER_MODEL")
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
+    gemini_model: str = Field(default="", alias="GEMINI_MODEL")
     ollama_base_url: str = Field(
         default="http://localhost:11434",
         alias="OLLAMA_BASE_URL",
     )
+    ollama_model: str = Field(default="", alias="OLLAMA_MODEL")
 
     @property
     def backend_cors_origins(self) -> tuple[str, ...]:
@@ -90,6 +105,25 @@ class Settings(BaseSettings):
             origin.strip()
             for origin in self.backend_cors_origins_raw.split(",")
             if origin.strip()
+        )
+
+    @property
+    def llm_settings(self) -> LLMSettings:
+        """Return LLM-specific settings as a typed configuration object."""
+        return LLMSettings(
+            provider=self.llm_provider,
+            model=self.llm_model,
+            runtime_enabled=self.llm_runtime_enabled,
+            timeout_seconds=self.llm_timeout_seconds,
+            max_retries=self.llm_max_retries,
+            groq_api_key=self.groq_api_key,
+            groq_model=self.groq_model,
+            openrouter_api_key=self.openrouter_api_key,
+            openrouter_model=self.openrouter_model,
+            ollama_base_url=self.ollama_base_url,
+            ollama_model=self.ollama_model,
+            gemini_api_key=self.gemini_api_key,
+            gemini_model=self.gemini_model,
         )
 
     @field_validator("api_v1_prefix")

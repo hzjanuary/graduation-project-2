@@ -145,6 +145,59 @@ LOG_LEVEL=DEBUG
 
 Do not commit real API keys, database credentials, or object storage secrets.
 
+### LLM Provider Configuration
+
+SPEC-011 adds provider-independent LLM contracts, settings, and isolated
+provider clients for fake, Groq, OpenRouter, Ollama, and Gemini. Provider
+clients live behind a common async interface and use injectable HTTP transport
+for mocked tests. SPEC-011 does not yet add prompt templates, runtime LLM
+behavior, or public provider-management APIs.
+
+The safe default is offline/deterministic:
+
+```text
+LLM_PROVIDER=fake
+LLM_RUNTIME_ENABLED=false
+LLM_TIMEOUT_SECONDS=30
+LLM_MAX_RETRIES=2
+```
+
+Supported provider identifiers are:
+
+```text
+fake
+groq
+openrouter
+ollama
+gemini
+```
+
+Provider-specific environment variables are documented in `.env.example`:
+
+```text
+LLM_MODEL
+GROQ_API_KEY
+GROQ_MODEL
+OPENROUTER_API_KEY
+OPENROUTER_MODEL
+OLLAMA_BASE_URL
+OLLAMA_MODEL
+GEMINI_API_KEY
+GEMINI_MODEL
+```
+
+API keys are optional at settings load time so local tests and the deterministic
+demo can run without real credentials. Real remote provider clients perform
+explicit readiness checks before use and fail safely when required keys are
+missing. Never commit real provider keys.
+
+The fake provider is deterministic and requires no network. Groq and
+OpenRouter use non-streaming OpenAI-compatible chat completion request shapes;
+Ollama uses the local non-streaming `/api/chat` endpoint; Gemini uses the
+non-streaming `generateContent` REST shape. Runtime execution still uses the
+existing deterministic path until a later SPEC-011 task explicitly wires LLM
+runtime behavior behind the feature flag.
+
 ## Authentication Utilities
 
 Password hashing utilities live in `app/auth/password.py`.

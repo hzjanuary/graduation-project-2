@@ -3,6 +3,7 @@
 import pytest
 
 from app.config import AppEnvironment, Settings
+from app.llm import LLMProvider
 
 
 def test_settings_load_default_development_values() -> None:
@@ -18,7 +19,11 @@ def test_settings_load_default_development_values() -> None:
     assert settings.jwt_algorithm == "HS256"
     assert settings.access_token_expire_minutes == 30
     assert settings.refresh_token_expire_days == 7
-    assert settings.llm_provider == "ollama"
+    assert settings.llm_provider is LLMProvider.FAKE
+    assert settings.llm_model == ""
+    assert settings.llm_runtime_enabled is False
+    assert settings.llm_timeout_seconds == 30
+    assert settings.llm_max_retries == 2
     assert settings.ollama_base_url == "http://localhost:11434"
 
 
@@ -46,10 +51,18 @@ def test_settings_can_be_overridden_by_environment(
     monkeypatch.setenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15")
     monkeypatch.setenv("REFRESH_TOKEN_EXPIRE_DAYS", "14")
     monkeypatch.setenv("LLM_PROVIDER", "GROQ")
+    monkeypatch.setenv("LLM_MODEL", "global-model")
+    monkeypatch.setenv("LLM_RUNTIME_ENABLED", "true")
+    monkeypatch.setenv("LLM_TIMEOUT_SECONDS", "60")
+    monkeypatch.setenv("LLM_MAX_RETRIES", "4")
     monkeypatch.setenv("GROQ_API_KEY", "groq-key")
+    monkeypatch.setenv("GROQ_MODEL", "groq-model")
     monkeypatch.setenv("OPENROUTER_API_KEY", "openrouter-key")
+    monkeypatch.setenv("OPENROUTER_MODEL", "openrouter-model")
     monkeypatch.setenv("GEMINI_API_KEY", "gemini-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-model")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://ollama:11434")
+    monkeypatch.setenv("OLLAMA_MODEL", "ollama-model")
 
     settings = Settings()
 
@@ -73,11 +86,19 @@ def test_settings_can_be_overridden_by_environment(
     assert settings.jwt_algorithm == "HS256"
     assert settings.access_token_expire_minutes == 15
     assert settings.refresh_token_expire_days == 14
-    assert settings.llm_provider == "groq"
+    assert settings.llm_provider is LLMProvider.GROQ
+    assert settings.llm_model == "global-model"
+    assert settings.llm_runtime_enabled is True
+    assert settings.llm_timeout_seconds == 60
+    assert settings.llm_max_retries == 4
     assert settings.groq_api_key == "groq-key"
+    assert settings.groq_model == "groq-model"
     assert settings.openrouter_api_key == "openrouter-key"
+    assert settings.openrouter_model == "openrouter-model"
     assert settings.gemini_api_key == "gemini-key"
+    assert settings.gemini_model == "gemini-model"
     assert settings.ollama_base_url == "http://ollama:11434"
+    assert settings.ollama_model == "ollama-model"
 
 
 def test_testing_environment_can_be_configured(monkeypatch: pytest.MonkeyPatch) -> None:

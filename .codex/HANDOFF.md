@@ -17,7 +17,110 @@ Closed specs:
 
 Current active spec:
 
-- None
+- SPEC-011 LLM Provider Abstraction - Planning
+
+## Current SPEC-011 Planning State
+
+Planning files:
+
+- `.ai/specs/SPEC-011-llm-provider-abstraction/spec.md`
+- `.ai/specs/SPEC-011-llm-provider-abstraction/tasks.md`
+
+Planned tasks:
+
+- `TASK 011.1 - LLM Provider Contracts and Settings` - Approved
+- `TASK 011.2 - Provider Client Implementations with Mocked HTTP Tests` - Implemented / Pending Review
+- `TASK 011.3 - LLM Service Router, Fallbacks, and Error Handling` - Planned
+- `TASK 011.4 - Prompt Templates and Structured Output Schemas` - Planned
+- `TASK 011.5 - Runtime Integration Behind Feature Flag` - Planned
+- `TASK 011.6 - Provider Documentation and Local Demo Guide` - Planned
+- `TASK 011.7 - LLM Provider Hardening and SPEC-011 Final Review` - Planned
+
+Scope:
+
+- Plan provider-independent LLM contracts for Groq, OpenRouter, Ollama,
+  Gemini, and a deterministic fake provider.
+- Preserve no-key local demo behavior and deterministic tests.
+- Keep runtime integration feature-flagged and behind an LLM service
+  interface.
+- Do not implement provider clients, runtime integration, prompts, API
+  behavior, frontend behavior, migrations, or model changes during planning.
+
+## TASK 011.1 Implementation State
+
+Deliverables:
+
+- `backend/app/llm/__init__.py`
+- `backend/app/llm/contracts.py`
+- `backend/app/llm/errors.py`
+- `backend/app/llm/settings.py`
+- `backend/app/tests/test_llm_contracts.py`
+- `backend/app/tests/test_llm_settings.py`
+- `backend/app/tests/test_settings.py` updated for LLM settings defaults
+- `backend/.env.example` updated with safe LLM variables
+- `backend/README.md` updated with LLM settings notes
+- `docker-compose.yml` updated to use fake/offline LLM defaults
+
+Behavior:
+
+- Adds provider-independent Pydantic v2 LLM contracts for provider names,
+  message roles, chat messages, chat requests, chat responses, structured
+  response metadata, model capabilities, usage metadata, finish reasons, and
+  safe provider error categories.
+- Adds safe exception classes for provider/configuration errors without
+  provider SDKs or network behavior.
+- Adds `LLMSettings` helper and integrates LLM fields into existing application
+  settings.
+- Supports `fake`, `groq`, `openrouter`, `ollama`, and `gemini` provider
+  values.
+- Defaults to `LLM_PROVIDER=fake`, `LLM_RUNTIME_ENABLED=false`,
+  `LLM_TIMEOUT_SECONDS=30`, and `LLM_MAX_RETRIES=2`.
+- Keeps API keys optional at settings load time; real provider readiness is an
+  explicit check for later provider-client tasks.
+- Does not add provider clients, HTTP calls, LLM service routing, prompt
+  templates, runtime integration, API behavior, frontend behavior, migrations,
+  or database model changes.
+
+## TASK 011.2 Implementation State
+
+Deliverables:
+
+- `backend/app/llm/clients/__init__.py`
+- `backend/app/llm/clients/base.py`
+- `backend/app/llm/clients/http.py`
+- `backend/app/llm/clients/fake.py`
+- `backend/app/llm/clients/groq.py`
+- `backend/app/llm/clients/openrouter.py`
+- `backend/app/llm/clients/ollama.py`
+- `backend/app/llm/clients/gemini.py`
+- `backend/app/llm/clients/openai_compatible.py`
+- `backend/app/tests/test_llm_fake_client.py`
+- `backend/app/tests/test_llm_provider_clients.py`
+- `backend/app/tests/test_llm_provider_error_mapping.py`
+- `backend/README.md` updated with provider-client scope
+
+Behavior:
+
+- Adds a provider-independent async `LLMClient` protocol.
+- Adds deterministic `FakeLLMClient` for tests and no-key local development.
+- Adds Groq and OpenRouter clients using non-streaming OpenAI-compatible chat
+  completion request/response shapes.
+- Adds Ollama client using the local non-streaming `/api/chat` endpoint with
+  `stream: false` and no API key requirement.
+- Adds Gemini client using the non-streaming `generateContent` REST shape with
+  `x-goog-api-key` authentication.
+- Adds an injectable JSON HTTP transport contract plus a stdlib urllib
+  implementation for runtime use; tests inject fake transports and do not make
+  live provider calls.
+- Normalizes provider responses into `LLMChatResponse`, including usage,
+  finish reason, request id/provider response id, and structured JSON parsing
+  when requested.
+- Maps configuration, authentication, rate limit, timeout, unavailable,
+  invalid response, and unknown provider failures into safe LLM error
+  categories without exposing API keys.
+- Does not add provider SDKs, LLM service routing/fallbacks, prompt templates,
+  runtime integration, API behavior, frontend behavior, migrations, or database
+  model changes.
 
 ## Current SPEC-010 Planning State
 
