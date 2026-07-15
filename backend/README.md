@@ -450,6 +450,29 @@ The fake embedding provider is deterministic, hash-based, requires no API keys,
 does not call `LLMService`, and does not call Qdrant or MinIO. It exists for
 future ingestion/retrieval tests and no-key local demos only.
 
+TASK 013.3 adds an explicit local-demo knowledge ingestion command:
+
+```bash
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo
+```
+
+The command ingests deterministic procurement demo knowledge documents, chunks
+them with the TASK 013.1 helpers, embeds chunks with the fake embedding provider
+by default, stores original source text objects in MinIO, and upserts chunk
+vectors into Qdrant through the existing provider abstractions. It is
+local-demo only, idempotent, and does not run on backend startup or through a
+public API endpoint.
+
+To inspect the ingestion plan without writing to MinIO or Qdrant:
+
+```bash
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo --dry-run --json
+```
+
+This slice does not implement retrieval/search APIs, runtime RAG grounding,
+frontend evidence panels, migrations, database models, upload UI, or real
+embedding providers.
+
 ## Workflow State Foundation
 
 Workflow state schemas and lifecycle metadata live in `app/workflows`.

@@ -141,3 +141,47 @@ docker-compose run --rm backend-test python -m app.demo.seed --dry-run
 The mutating command requires `--confirm-local-demo` to make the local/demo-only
 scope explicit. It prints a bounded summary of created/reused roles, users,
 workflows, and events without printing password hashes.
+
+## Demo Knowledge Documents
+
+TASK 013.3 adds deterministic local-demo knowledge documents for future RAG
+retrieval and citation demos. The definitions live in
+`backend/app/demo/knowledge_documents.py` and are ingested explicitly by the
+knowledge ingestion CLI. They cover:
+
+| Document ID | Source type | Source dataset reference |
+| --- | --- | --- |
+| `demo-kb-procurement-policy` | `policy` | `datasets/policies/POLICY-DISCOUNT-APPROVAL.md` |
+| `demo-kb-acme-contract-terms` | `contract` | `datasets/contracts/CON-2026-ACME-IT.md` |
+| `demo-kb-supplier-evaluation-notes` | `supplier_profile` | `datasets/index/document_index.json` |
+| `demo-kb-pricing-guideline` | `pricing` | `datasets/pricing_rules.json` |
+| `demo-kb-compliance-checklist` | `compliance_checklist` | `datasets/policies/POLICY-DOMAIN-COMPLIANCE.md` |
+
+Each document has a stable document ID, deterministic checksum, bounded demo
+content, and deterministic object storage key under `demo/knowledge/`.
+
+## Demo Knowledge Ingestion Command
+
+TASK 013.3 provides an explicit local-demo knowledge ingestion command:
+
+```bash
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo
+```
+
+The command chunks the deterministic demo knowledge documents, embeds chunks
+with the default fake embedding provider, stores original source text in MinIO,
+and upserts chunk vectors and safe metadata into Qdrant. It does not run on
+backend startup and is not exposed through a public API endpoint.
+
+For a non-persisting check:
+
+```bash
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo --dry-run --json
+```
+
+Rerunning the confirmed ingestion command is safe: object keys and vector point
+IDs are deterministic, so MinIO objects are overwritten/reused and Qdrant points
+are upserted without duplicate chunks.
+
+TASK 013.3 does not implement retrieval/search APIs, runtime RAG grounding,
+frontend evidence panels, upload UI, migrations, or database models.

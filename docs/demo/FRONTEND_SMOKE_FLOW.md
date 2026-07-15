@@ -3,6 +3,11 @@
 Use this checklist after running the demo seed command from
 `docs/demo/DEMO_RUNBOOK.md`.
 
+The demo runbook may also ingest the local-demo knowledge base with
+`python -m app.knowledge.ingest_demo --confirm-local-demo`. TASK 013.3 only
+loads deterministic documents into MinIO/Qdrant for later RAG work; the
+frontend does not yet display citations or knowledge search results.
+
 ## Environment
 
 Required local frontend variables:
@@ -199,7 +204,7 @@ Capture these for final presentation if screenshots are needed:
 ## Known Limitations
 
 - No real LLM provider behavior yet.
-- No RAG or document upload/indexing UI yet.
+- No RAG retrieval UI, citation panel, or document upload/indexing UI yet.
 - No admin user-management UI yet.
 - No production deployment automation yet.
 - No fake live events should be used to mask backend or Redis issues.

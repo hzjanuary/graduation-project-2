@@ -21,3 +21,11 @@ class KnowledgeEmbeddingConfigurationError(KnowledgeEmbeddingError):
 
 class KnowledgeEmbeddingInputError(KnowledgeEmbeddingError):
     """Raised when embedding input cannot be embedded safely."""
+
+
+class KnowledgeIngestionError(KnowledgeBaseError):
+    """Base class for knowledge ingestion errors."""
+
+
+class KnowledgeIngestionConfigurationError(KnowledgeIngestionError):
+    """Raised when demo knowledge ingestion is not configured safely."""

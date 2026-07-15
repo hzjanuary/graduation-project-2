@@ -52,6 +52,7 @@ docker-compose config
 docker-compose up -d postgres redis qdrant minio
 docker-compose run --rm backend-test alembic upgrade head
 docker-compose run --rm backend-test python -m app.demo.seed --confirm-local-demo
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo
 ```
 
 The seed command is explicit and local-demo only. It does not run on import,
@@ -71,6 +72,17 @@ For a machine-readable summary:
 ```bash
 docker-compose run --rm backend-test python -m app.demo.seed --confirm-local-demo --json
 ```
+
+For a non-persisting knowledge ingestion check:
+
+```bash
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo --dry-run --json
+```
+
+The knowledge ingestion command is explicit and local-demo only. It chunks
+deterministic demo procurement documents, stores source text in MinIO, and
+upserts fake-embedded chunk vectors into Qdrant. Retrieval/search APIs and
+frontend citation panels are still later SPEC-013 tasks.
 
 Start the backend service after migrations and seeding:
 
@@ -240,6 +252,8 @@ Metadata JSON: {"tags":{"source":"board-demo"},"attributes":{}}
 - A denied RBAC action shows an understandable error.
 - No screen claims that real LLM reasoning, RAG, or email sending is
   implemented.
+- Demo knowledge documents can be ingested into MinIO/Qdrant, but retrieval
+  grounding is not yet wired into runtime or frontend views.
 
 ## Troubleshooting
 
@@ -279,6 +293,29 @@ docker-compose run --rm backend-test python -m app.demo.seed --confirm-local-dem
 
 Use `--dry-run` only when you want the command to roll back instead of
 persisting records.
+
+### Knowledge Ingestion Command Refuses To Run
+
+Mutating knowledge ingestion also requires the confirmation flag:
+
+```bash
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo
+```
+
+Use `--dry-run --json` for a non-persisting summary.
+
+### Qdrant Or MinIO Is Unavailable During Knowledge Ingestion
+
+Run:
+
+```bash
+docker-compose ps qdrant minio
+docker-compose logs qdrant
+docker-compose logs minio
+```
+
+The ingestion CLI requires Qdrant and MinIO. It does not affect workflow seed
+records or frontend behavior if those services are unavailable.
 
 ### Frontend Cannot Reach Backend
 
@@ -333,7 +370,9 @@ Treat it as non-blocking if the frontend test command exits successfully.
 
 - Real LLM provider behavior is optional local experimentation only; the
   board-stable demo defaults to deterministic runtime mode.
-- No RAG or document upload/indexing UI.
+- RAG retrieval/runtime/frontend citation display are not wired yet. TASK 013.3
+  only adds explicit local-demo document ingestion into MinIO and Qdrant.
+- No document upload/indexing UI.
 - No admin user-management UI.
 - No production deployment automation.
 - No real procurement pricing, compliance, approval, or email sending logic.

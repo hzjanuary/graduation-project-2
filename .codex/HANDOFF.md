@@ -19,7 +19,7 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-013 RAG and Document Knowledge Base - TASK 013.2 in progress
+- SPEC-013 RAG and Document Knowledge Base - TASK 013.3 in progress
 
 ## Current SPEC-013 Planning State
 
@@ -150,6 +150,46 @@ Behavior:
   provider clients, call Qdrant or MinIO, add ingestion CLI, add retrieval/API,
   change runtime/frontend behavior, add migrations/models, add provider SDKs,
   or make external calls.
+
+## TASK 013.3 Implementation State
+
+Deliverables:
+
+- `backend/app/demo/knowledge_documents.py`
+- `backend/app/knowledge/ingestion.py`
+- `backend/app/knowledge/ingest_demo.py`
+- `backend/app/knowledge/__init__.py` updated
+- `backend/app/knowledge/exceptions.py` updated
+- `backend/app/tests/test_knowledge_demo_documents.py`
+- `backend/app/tests/test_knowledge_ingestion.py`
+- `backend/app/tests/test_knowledge_ingestion_cli.py`
+- `docs/demo/DATASET_INVENTORY.md` updated
+- `docs/demo/DEMO_RUNBOOK.md` updated
+- `docs/demo/FRONTEND_SMOKE_FLOW.md` updated
+- `backend/README.md` updated
+
+Behavior:
+
+- Adds deterministic local-demo knowledge documents for procurement policy,
+  Acme contract terms, supplier evaluation notes, pricing guidance, and
+  compliance checklist evidence.
+- Adds explicit `python -m app.knowledge.ingest_demo --confirm-local-demo`
+  CLI for local-demo knowledge ingestion only.
+- CLI supports `--dry-run`, `--json`, and `--collection-name`.
+- Mutating ingestion requires `--confirm-local-demo`; dry-run is non-writing.
+- Ingestion uses TASK 013.1 chunking/contracts and TASK 013.2 fake embeddings
+  by default.
+- Ingestion stores original source text in MinIO through
+  `ObjectStorageProvider` and upserts deterministic chunk vectors into Qdrant
+  through `VectorStore`.
+- Vector payloads include bounded safe metadata: document id/title/source type,
+  domain, checksum, chunk id/index, citation label, bounded text, embedding
+  provider/model/dimensions, and demo markers.
+- Idempotency uses deterministic object keys and deterministic UUIDv5 vector
+  point ids derived from chunk ids.
+- Does not implement retrieval/search APIs, runtime RAG grounding, frontend
+  citation panels, upload UI, migrations, database models, real embedding
+  providers, provider SDKs, or backend startup auto-ingestion.
 
 ## Current SPEC-012 Planning State
 
