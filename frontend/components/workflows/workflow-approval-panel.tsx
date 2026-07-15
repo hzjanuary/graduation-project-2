@@ -1,0 +1,344 @@
+"use client";
+
+import { useState } from "react";
+
+import { ApiClientError } from "@/lib/api/client";
+import {
+  resumeWorkflow,
+  submitWorkflowApproval,
+} from "@/lib/api/workflows";
+import { getAccessToken } from "@/lib/auth/session";
+import type {
+  ApprovalDecisionResponse,
+  ApprovalDecisionType,
+  ApprovalHistoryResponse,
+  WorkflowResumeResponse,
+  WorkflowState,
+} from "@/lib/api/types";
+
+const MAX_APPROVAL_COMMENT_LENGTH = 2000;
+
+type ApprovalActionState =
+  | { status: "idle" }
+  | { status: "submitting"; action: ApprovalDecisionType | "resume" }
+  | { status: "success"; message: string }
+  | { status: "error"; message: string };
+
+interface WorkflowApprovalPanelProps {
+  workflow: WorkflowState;
+  approvalHistory: ApprovalHistoryResponse;
+  onApprovalChanged?: () => Promise<void> | void;
+}
+
+export function WorkflowApprovalPanel({
+  workflow,
+  approvalHistory,
+  onApprovalChanged,
+}: WorkflowApprovalPanelProps) {
+  const [comment, setComment] = useState("");
+  const [actionState, setActionState] = useState<ApprovalActionState>({
+    status: "idle",
+  });
+
+  const canSubmitDecision = workflow.status === "WAITING_APPROVAL";
+  const canResume =
+    workflow.status === "APPROVED" || approvalHistory.can_resume === true;
+  const isSubmitting = actionState.status === "submitting";
+
+  async function submitDecision(decision: ApprovalDecisionType) {
+    const validationMessage = approvalValidationMessage(decision, comment);
+    if (validationMessage) {
+      setActionState({ status: "error", message: validationMessage });
+      return;
+    }
+
+    const token = getAccessToken();
+    if (!token) {
+      setActionState({
+        status: "error",
+        message: "Sign in before submitting an approval decision.",
+      });
+      return;
+    }
+
+    setActionState({ status: "submitting", action: decision });
+    try {
+      const response = await submitWorkflowApproval(
+        workflow.workflow_id,
+        {
+          decision,
+          comment: comment.trim() || null,
+        },
+        { token },
+      );
+      setActionState({
+        status: "success",
+        message: approvalSuccessMessage(response),
+      });
+      setComment("");
+      await onApprovalChanged?.();
+    } catch (error) {
+      setActionState({ status: "error", message: approvalErrorMessage(error) });
+    }
+  }
+
+  async function handleResume() {
+    const token = getAccessToken();
+    if (!token) {
+      setActionState({
+        status: "error",
+        message: "Sign in before resuming this workflow.",
+      });
+      return;
+    }
+
+    setActionState({ status: "submitting", action: "resume" });
+    try {
+      const response = await resumeWorkflow(workflow.workflow_id, {}, { token });
+      setActionState({
+        status: "success",
+        message: resumeSuccessMessage(response),
+      });
+      await onApprovalChanged?.();
+    } catch (error) {
+      setActionState({ status: "error", message: resumeErrorMessage(error) });
+    }
+  }
+
+  return (
+    <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">
+            Approval workflow
+          </p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">
+            Human approval and resume
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+            Submit a human approval decision when the workflow is waiting for
+            approval. After approval, resume runs the bounded post-approval
+            continuation without calling the original run endpoint.
+          </p>
+        </div>
+        <StatusPill status={workflow.status} />
+      </div>
+
+      {canSubmitDecision ? (
+        <div className="mt-5 grid gap-4">
+          <label className="grid gap-2 text-sm font-medium">
+            Approval comment
+            <textarea
+              className="min-h-28 resize-y rounded-md border bg-background p-3 text-sm font-normal leading-6 outline-none focus:ring-2 focus:ring-ring"
+              maxLength={MAX_APPROVAL_COMMENT_LENGTH}
+              name="approvalComment"
+              onChange={(event) => setComment(event.target.value)}
+              placeholder="Add a bounded decision comment. Rejections require a comment."
+              value={comment}
+            />
+          </label>
+          <div className="text-xs text-muted-foreground">
+            {comment.length}/{MAX_APPROVAL_COMMENT_LENGTH} characters
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <ApprovalButton
+              disabled={isSubmitting}
+              label="Approve"
+              loadingLabel="Approving..."
+              loading={isSubmitting && actionState.action === "approve"}
+              onClick={() => void submitDecision("approve")}
+            />
+            <ApprovalButton
+              disabled={isSubmitting}
+              label="Reject"
+              loadingLabel="Rejecting..."
+              loading={isSubmitting && actionState.action === "reject"}
+              onClick={() => void submitDecision("reject")}
+              variant="danger"
+            />
+            <ApprovalButton
+              disabled={isSubmitting}
+              label="Request changes"
+              loadingLabel="Requesting..."
+              loading={isSubmitting && actionState.action === "request_changes"}
+              onClick={() => void submitDecision("request_changes")}
+              variant="secondary"
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="mt-5 text-sm leading-6 text-muted-foreground">
+          Approval decisions are available only while the workflow is
+          WAITING_APPROVAL. Backend authorization remains the source of truth
+          for who can approve, reject, or request changes.
+        </p>
+      )}
+
+      {canResume ? (
+        <div className="mt-5 rounded-md border bg-muted/40 p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold">
+                Post-approval continuation
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Resume the approved workflow through the email preparation
+                stage. This does not send email.
+              </p>
+            </div>
+            <ApprovalButton
+              disabled={isSubmitting}
+              label="Resume workflow"
+              loadingLabel="Resuming..."
+              loading={isSubmitting && actionState.action === "resume"}
+              onClick={() => void handleResume()}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {actionState.status === "success" ? (
+        <div className="mt-5 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-700">
+          {actionState.message}
+        </div>
+      ) : null}
+
+      {actionState.status === "error" ? (
+        <div className="mt-5 rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {actionState.message}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ApprovalButton({
+  disabled,
+  label,
+  loading,
+  loadingLabel,
+  onClick,
+  variant = "primary",
+}: {
+  disabled: boolean;
+  label: string;
+  loading: boolean;
+  loadingLabel: string;
+  onClick: () => void;
+  variant?: "primary" | "secondary" | "danger";
+}) {
+  const className =
+    variant === "danger"
+      ? "inline-flex h-10 items-center justify-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-60"
+      : variant === "secondary"
+        ? "inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+        : "inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60";
+
+  return (
+    <button
+      className={className}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      {loading ? loadingLabel : label}
+    </button>
+  );
+}
+
+function StatusPill({ status }: { status: WorkflowState["status"] }) {
+  return (
+    <span className="inline-flex h-9 items-center rounded-full border px-3 text-xs font-medium text-muted-foreground">
+      {status}
+    </span>
+  );
+}
+
+function approvalValidationMessage(
+  decision: ApprovalDecisionType,
+  comment: string,
+): string | null {
+  if (comment.length > MAX_APPROVAL_COMMENT_LENGTH) {
+    return "Approval comments must be 2,000 characters or fewer.";
+  }
+  if (decision === "reject" && comment.trim().length === 0) {
+    return "Reject decisions require a comment.";
+  }
+  return null;
+}
+
+function approvalSuccessMessage(response: ApprovalDecisionResponse): string {
+  const decision = response.approval.decision;
+  if (decision === "approve") {
+    return response.can_resume
+      ? "Workflow approved. It is ready for explicit resume."
+      : "Workflow approved.";
+  }
+  if (decision === "reject") {
+    return "Workflow rejected.";
+  }
+  return "Changes requested. The workflow remains in approval review.";
+}
+
+function resumeSuccessMessage(response: WorkflowResumeResponse): string {
+  if (response.resumed) {
+    return response.message ?? "Workflow resumed successfully.";
+  }
+  return response.message ?? "Workflow resume request completed.";
+}
+
+function approvalErrorMessage(error: unknown): string {
+  return actionErrorMessage(error, {
+    forbidden: "Your account cannot submit approval decisions.",
+    conflict:
+      "This workflow cannot accept that approval decision from its current state.",
+    notFound: "The workflow was not found.",
+    unauthorized: "Your session is not authorized. Sign in again.",
+    validation: "Check the approval decision and comment, then try again.",
+    fallback: "The approval decision could not be submitted. Try again later.",
+  });
+}
+
+function resumeErrorMessage(error: unknown): string {
+  return actionErrorMessage(error, {
+    forbidden: "Your account cannot resume workflows.",
+    conflict:
+      "This workflow cannot resume from its current approval or runtime state.",
+    notFound: "The workflow was not found.",
+    unauthorized: "Your session is not authorized. Sign in again.",
+    validation: "Check the resume request, then try again.",
+    fallback: "The workflow could not be resumed. Try again later.",
+  });
+}
+
+function actionErrorMessage(
+  error: unknown,
+  messages: {
+    unauthorized: string;
+    forbidden: string;
+    notFound: string;
+    conflict: string;
+    validation: string;
+    fallback: string;
+  },
+): string {
+  if (error instanceof ApiClientError) {
+    if (error.status === 401) {
+      return messages.unauthorized;
+    }
+    if (error.status === 403) {
+      return messages.forbidden;
+    }
+    if (error.status === 404) {
+      return messages.notFound;
+    }
+    if (error.status === 409) {
+      return error.message || messages.conflict;
+    }
+    if (error.status === 422) {
+      return error.message || messages.validation;
+    }
+    return error.message;
+  }
+  return messages.fallback;
+}

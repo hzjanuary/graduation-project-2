@@ -195,6 +195,60 @@ export interface WorkflowRunResponse {
   message?: string | null;
 }
 
+export type ApprovalDecisionType = "approve" | "reject" | "request_changes";
+
+export interface ApprovalDecisionRequest {
+  decision: ApprovalDecisionType;
+  comment?: string | null;
+  request_id?: string | null;
+  metadata?: Record<string, JsonValue>;
+}
+
+export interface ApprovalRecord {
+  decision_id: string;
+  workflow_id: string;
+  decision: ApprovalDecisionType;
+  actor_id: string;
+  actor_email?: string | null;
+  actor_roles: string[];
+  comment?: string | null;
+  decided_at: string;
+  previous_status: WorkflowStatus;
+  next_status?: WorkflowStatus | null;
+  request_id?: string | null;
+  metadata: Record<string, JsonValue>;
+}
+
+export interface ApprovalDecisionResponse {
+  workflow_id: string;
+  approval: ApprovalRecord;
+  previous_status: WorkflowStatus;
+  next_status: WorkflowStatus;
+  can_resume: boolean;
+  resume_recommended: boolean;
+}
+
+export interface ApprovalHistoryResponse {
+  workflow_id: string;
+  approvals: ApprovalRecord[];
+  has_final_decision: boolean;
+  can_resume: boolean;
+}
+
+export interface WorkflowResumeRequest {
+  request_id?: string | null;
+  metadata?: Record<string, JsonValue>;
+}
+
+export interface WorkflowResumeResponse {
+  workflow_id: string;
+  previous_status: WorkflowStatus;
+  next_status: WorkflowStatus;
+  resumed: boolean;
+  message?: string | null;
+  request_id?: string | null;
+}
+
 export interface WorkflowEventStreamMessage {
   type: "workflow.event";
   workflow_id: string;

@@ -7,7 +7,8 @@ TypeScript, Tailwind CSS, shadcn/ui-compatible conventions, typed backend API
 client helpers, a local-development token session layer, the first authenticated
 dashboard shell, workflow list/detail pages, and workflow create/run actions.
 Workflow detail pages now include a live WebSocket event timeline backed by the
-existing SPEC-008 stream endpoint.
+existing SPEC-008 stream endpoint and a SPEC-012 approval/resume panel backed by
+the existing approval and resume workflow endpoints.
 
 ## Requirements
 
@@ -132,6 +133,24 @@ Implemented in TASK 009.6:
   connection state rendering, no-token behavior, malformed messages, and socket
   cleanup
 
+Implemented in TASK 012.5:
+
+- Workflow API client helpers for
+  `POST /api/v1/workflows/{workflow_id}/approval`,
+  `GET /api/v1/workflows/{workflow_id}/approval/history`, and
+  `POST /api/v1/workflows/{workflow_id}/resume`
+- Backend-aligned approval decision, approval history, and resume DTO types
+- Workflow detail approval panel for approve, reject, and request changes
+- Explicit post-approval resume action that calls `/resume`, not `/run`
+- Approval history rendering on workflow detail pages
+- Refresh of workflow detail, persisted events, and approval history after
+  approval or resume actions
+- Loading, validation, 401, 403, 404, 409, and generic error states for
+  approval/resume flows
+- Unit/component tests for request shapes, bearer-token attachment, approval
+  actions, comment validation, history rendering, resume behavior, and
+  backend-authoritative error handling
+
 ## Dashboard Shell
 
 The dashboard shell is available at:
@@ -155,6 +174,10 @@ They call only existing backend read endpoints and attach the stored bearer
 token. Workflow creation is available at `/workflows/new`, and workflow detail
 pages include a run action that calls the existing backend `/run` endpoint and
 a live event timeline that opens the existing workflow WebSocket stream.
+Workflow detail pages also include human approval controls for
+`WAITING_APPROVAL` workflows and an explicit post-approval resume action for
+approved workflows. Approval and resume authorization is enforced by the
+backend; frontend role hints are not treated as security decisions.
 
 ## Auth And API Client
 

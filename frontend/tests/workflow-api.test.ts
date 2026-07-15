@@ -3,9 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createWorkflow,
   getWorkflow,
+  getWorkflowApprovalHistory,
   listWorkflowEvents,
   listWorkflows,
+  resumeWorkflow,
   runWorkflow,
+  submitWorkflowApproval,
 } from "@/lib/api/workflows";
 import type { WorkflowCreateRequest } from "@/lib/api/types";
 
@@ -118,6 +121,86 @@ describe("workflow API client", () => {
       "Bearer access-token",
     );
   });
+
+  it("submits an approval decision with bearer auth", async () => {
+    const payload = {
+      decision: "approve" as const,
+      comment: "Approved for customer response.",
+    };
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        workflow_id: "workflow-1",
+        approval: sampleApproval("approve"),
+        previous_status: "WAITING_APPROVAL",
+        next_status: "APPROVED",
+        can_resume: true,
+        resume_recommended: true,
+      }),
+    );
+
+    await submitWorkflowApproval("workflow-1", payload, {
+      token: "access-token",
+      baseUrl: "http://api.test/api/v1",
+      fetcher,
+    });
+
+    const [url, init] = fetcher.mock.calls[0];
+    expect(url).toBe("http://api.test/api/v1/workflows/workflow-1/approval");
+    expect(init?.method).toBe("POST");
+    expect(init?.body).toBe(JSON.stringify(payload));
+    expect(new Headers(init?.headers).get("Authorization")).toBe(
+      "Bearer access-token",
+    );
+  });
+
+  it("loads approval history", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        workflow_id: "workflow-1",
+        approvals: [],
+        has_final_decision: false,
+        can_resume: false,
+      }),
+    );
+
+    await getWorkflowApprovalHistory("workflow-1", {
+      token: "access-token",
+      baseUrl: "http://api.test/api/v1",
+      fetcher,
+    });
+
+    expect(fetcher.mock.calls[0][0]).toBe(
+      "http://api.test/api/v1/workflows/workflow-1/approval/history",
+    );
+  });
+
+  it("resumes an approved workflow by calling resume, not run", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        workflow_id: "workflow-1",
+        previous_status: "APPROVED",
+        next_status: "COMPLETED",
+        resumed: true,
+        message: "Workflow resume completed.",
+        request_id: null,
+      }),
+    );
+
+    await resumeWorkflow("workflow-1", {}, {
+      token: "access-token",
+      baseUrl: "http://api.test/api/v1",
+      fetcher,
+    });
+
+    const [url, init] = fetcher.mock.calls[0];
+    expect(url).toBe("http://api.test/api/v1/workflows/workflow-1/resume");
+    expect(url).not.toContain("/run");
+    expect(init?.method).toBe("POST");
+    expect(init?.body).toBe(JSON.stringify({}));
+    expect(new Headers(init?.headers).get("Authorization")).toBe(
+      "Bearer access-token",
+    );
+  });
 });
 
 function jsonResponse(payload: unknown): Response {
@@ -139,5 +222,22 @@ function sampleWorkflow(workflowId: string) {
     retry_count: 0,
     created_at: "2026-07-13T10:00:00Z",
     updated_at: "2026-07-13T10:00:00Z",
+  };
+}
+
+function sampleApproval(decision: "approve" | "reject" | "request_changes") {
+  return {
+    decision_id: "approval-1",
+    workflow_id: "workflow-1",
+    decision,
+    actor_id: "user-1",
+    actor_email: "manager@example.test",
+    actor_roles: ["Manager"],
+    comment: "Approved for customer response.",
+    decided_at: "2026-07-13T10:03:00Z",
+    previous_status: "WAITING_APPROVAL",
+    next_status: decision === "approve" ? "APPROVED" : "WAITING_APPROVAL",
+    request_id: null,
+    metadata: {},
   };
 }

@@ -89,12 +89,19 @@ describe("workflow pages", () => {
         limit: 25,
         offset: 0,
       },
+      {
+        workflow_id: "workflow-123",
+        approvals: [],
+        has_final_decision: false,
+        can_resume: false,
+      },
     ]);
 
     await render(<WorkflowDetailView workflowId="workflow-123" />);
 
     expect(document.body.textContent).toContain("workflow-123");
     expect(document.body.textContent).toContain("Request summary");
+    expect(document.body.textContent).toContain("Approval history");
     expect(document.body.textContent).toContain("Event timeline");
     expect(document.body.textContent).toContain("runtime.started");
     expect(document.body.textContent).toContain("Runtime started");

@@ -35,7 +35,7 @@ Planned tasks:
   Implemented
 - `TASK 012.3 - Approval and Resume API Endpoints with RBAC` - Implemented
 - `TASK 012.4 - Runtime Resume Implementation` - Implemented
-- `TASK 012.5 - Frontend Approval Panel and API Client`
+- `TASK 012.5 - Frontend Approval Panel and API Client` - Implemented
 - `TASK 012.6 - Approval Timeline, Demo Runbook, and Seed Updates`
 - `TASK 012.7 - Human Approval Hardening and SPEC-012 Final Review`
 
@@ -186,6 +186,46 @@ Behavior:
 - Does not add frontend behavior, migrations, model changes, new statuses,
   email sending, RAG/document upload, provider-management UI, token streaming,
   or a global response envelope.
+
+## TASK 012.5 Implementation State
+
+Deliverables:
+
+- `frontend/lib/api/types.ts` updated
+- `frontend/lib/api/workflows.ts` updated
+- `frontend/components/workflows/workflow-approval-panel.tsx`
+- `frontend/components/workflows/workflow-approval-history.tsx`
+- `frontend/components/workflows/workflow-detail-view.tsx` updated
+- `frontend/tests/workflow-api.test.ts` updated
+- `frontend/tests/workflow-pages.test.tsx` updated
+- `frontend/tests/workflow-approval.test.tsx`
+- `frontend/README.md` updated
+
+Behavior:
+
+- Adds typed frontend DTOs for approval decisions, approval records, approval
+  history, resume request, and resume response.
+- Adds typed workflow API client helpers for:
+  `POST /api/v1/workflows/{workflow_id}/approval`,
+  `GET /api/v1/workflows/{workflow_id}/approval/history`, and
+  `POST /api/v1/workflows/{workflow_id}/resume`.
+- Encodes workflow ids in workflow API paths and continues attaching bearer
+  tokens through the existing API client.
+- Extends workflow detail loading to fetch workflow detail, persisted events,
+  and approval history together.
+- Adds a workflow approval panel that shows approve, reject, and
+  request-changes actions while a workflow is `WAITING_APPROVAL`.
+- Enforces only local comment validation in the frontend; backend 403/409
+  responses remain the authorization and lifecycle source of truth.
+- Adds explicit resume UI for approved/resume-ready workflows. Resume calls
+  `/resume` with `{}` and never calls `/run`.
+- Adds approval history rendering with decision, actor email/id, comment,
+  decided timestamp, previous status, and next status.
+- Refreshes workflow detail, events, and approval history after approval or
+  resume actions.
+- Does not modify backend/runtime behavior, auth/RBAC policy, demo seeds,
+  runbook docs, WebSocket protocol, frontend framework dependencies, or
+  existing `/run` behavior.
 
 Scope:
 

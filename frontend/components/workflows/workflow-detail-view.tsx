@@ -2,19 +2,34 @@
 
 import { useEffect, useState } from "react";
 
+import { WorkflowApprovalHistory } from "@/components/workflows/workflow-approval-history";
+import { WorkflowApprovalPanel } from "@/components/workflows/workflow-approval-panel";
 import { WorkflowDetail } from "@/components/workflows/workflow-detail";
 import { WorkflowEventTimeline } from "@/components/workflows/workflow-event-timeline";
 import { workflowErrorMessage } from "@/components/workflows/workflow-list-view";
 import { WorkflowRunPanel } from "@/components/workflows/workflow-run-panel";
-import { getWorkflow, listWorkflowEvents } from "@/lib/api/workflows";
+import {
+  getWorkflow,
+  getWorkflowApprovalHistory,
+  listWorkflowEvents,
+} from "@/lib/api/workflows";
 import { getAccessToken } from "@/lib/auth/session";
-import type { WorkflowEvent, WorkflowState } from "@/lib/api/types";
+import type {
+  ApprovalHistoryResponse,
+  WorkflowEvent,
+  WorkflowState,
+} from "@/lib/api/types";
 
 type DetailState =
   | { status: "loading" }
   | { status: "login-required" }
   | { status: "error"; message: string }
-  | { status: "ready"; workflow: WorkflowState; events: WorkflowEvent[] };
+  | {
+      status: "ready";
+      workflow: WorkflowState;
+      events: WorkflowEvent[];
+      approvalHistory: ApprovalHistoryResponse;
+    };
 
 interface WorkflowDetailViewProps {
   workflowId: string;
@@ -33,12 +48,13 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
     }
 
     loadWorkflowDetail(workflowId, token)
-      .then(({ workflow, events }) => {
+      .then(({ workflow, events, approvalHistory }) => {
         if (isMounted) {
           setState({
             status: "ready",
             workflow,
             events,
+            approvalHistory,
           });
         }
       })
@@ -82,8 +98,11 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
       return;
     }
 
-    const { workflow, events } = await loadWorkflowDetail(workflowId, token);
-    setState({ status: "ready", workflow, events });
+    const { workflow, events, approvalHistory } = await loadWorkflowDetail(
+      workflowId,
+      token,
+    );
+    setState({ status: "ready", workflow, events, approvalHistory });
   }
 
   return (
@@ -92,7 +111,13 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
         workflowId={state.workflow.workflow_id}
         onRunCompleted={refreshWorkflowDetail}
       />
+      <WorkflowApprovalPanel
+        approvalHistory={state.approvalHistory}
+        workflow={state.workflow}
+        onApprovalChanged={refreshWorkflowDetail}
+      />
       <WorkflowDetail workflow={state.workflow} />
+      <WorkflowApprovalHistory history={state.approvalHistory} />
       <WorkflowEventTimeline
         workflowId={state.workflow.workflow_id}
         persistedEvents={state.events}
@@ -102,14 +127,16 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
 }
 
 async function loadWorkflowDetail(workflowId: string, token: string) {
-  const [workflowResponse, eventResponse] = await Promise.all([
+  const [workflowResponse, eventResponse, approvalHistory] = await Promise.all([
     getWorkflow(workflowId, { token }),
     listWorkflowEvents(workflowId, { token }, { limit: 25, offset: 0 }),
+    getWorkflowApprovalHistory(workflowId, { token }),
   ]);
 
   return {
     workflow: workflowResponse.workflow,
     events: eventResponse.events,
+    approvalHistory,
   };
 }
 
