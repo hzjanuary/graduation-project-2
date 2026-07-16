@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+import { KnowledgeDocumentList } from "@/components/knowledge/knowledge-document-list";
+import { KnowledgeSearchPanel } from "@/components/knowledge/knowledge-search-panel";
 import { WorkflowApprovalHistory } from "@/components/workflows/workflow-approval-history";
 import { WorkflowApprovalPanel } from "@/components/workflows/workflow-approval-panel";
 import { WorkflowDetail } from "@/components/workflows/workflow-detail";
+import { WorkflowEvidencePanel } from "@/components/workflows/workflow-evidence-panel";
 import { WorkflowEventTimeline } from "@/components/workflows/workflow-event-timeline";
 import { workflowErrorMessage } from "@/components/workflows/workflow-list-view";
 import { WorkflowRunPanel } from "@/components/workflows/workflow-run-panel";
@@ -29,6 +32,7 @@ type DetailState =
       workflow: WorkflowState;
       events: WorkflowEvent[];
       approvalHistory: ApprovalHistoryResponse;
+      token: string;
     };
 
 interface WorkflowDetailViewProps {
@@ -55,6 +59,7 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
             workflow,
             events,
             approvalHistory,
+            token,
           });
         }
       })
@@ -102,7 +107,7 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
       workflowId,
       token,
     );
-    setState({ status: "ready", workflow, events, approvalHistory });
+    setState({ status: "ready", workflow, events, approvalHistory, token });
   }
 
   return (
@@ -117,6 +122,9 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
         onApprovalChanged={refreshWorkflowDetail}
       />
       <WorkflowDetail workflow={state.workflow} />
+      <WorkflowEvidencePanel workflow={state.workflow} events={state.events} />
+      <KnowledgeSearchPanel token={state.token} />
+      <KnowledgeDocumentList token={state.token} />
       <WorkflowApprovalHistory history={state.approvalHistory} />
       <WorkflowEventTimeline
         workflowId={state.workflow.workflow_id}

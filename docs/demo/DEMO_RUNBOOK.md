@@ -11,13 +11,15 @@ demo. It demonstrates the current implemented product path:
 - Run the deterministic runtime.
 - Submit human approval decisions.
 - Resume approved workflows through the explicit `/resume` path.
+- Inspect retrieved evidence/citations when RAG is explicitly enabled.
+- Search the local demo knowledge catalog after ingestion.
 - Inspect persisted workflow events.
 - Watch the workflow detail live event timeline.
 - Show RBAC behavior through existing backend permissions.
 
-This demo uses existing backend, frontend, runtime, workflow, and streaming
-behavior. It does not add real LLM reasoning, RAG, email sending, or production
-seed management.
+This demo uses existing backend, frontend, runtime, workflow, knowledge, and
+streaming behavior. It does not add real LLM reasoning, email sending, upload
+UI, admin document management, or production seed management.
 
 For the board-stable demo, keep LLM runtime mode disabled:
 
@@ -25,6 +27,14 @@ For the board-stable demo, keep LLM runtime mode disabled:
 LLM_PROVIDER=fake
 LLM_RUNTIME_ENABLED=false
 RAG_ENABLED=false
+```
+
+For the optional grounded-evidence demo, keep fake embeddings and enable only
+RAG grounding:
+
+```text
+EMBEDDING_PROVIDER=fake
+RAG_ENABLED=true
 ```
 
 Optional real-provider local experimentation is documented separately in
@@ -85,8 +95,7 @@ deterministic demo procurement documents, stores source text in MinIO, and
 upserts fake-embedded chunk vectors into Qdrant. Authenticated read-only
 knowledge search/catalog APIs are available under `/api/v1/knowledge`.
 Feature-flagged backend runtime grounding can use those citations when
-`RAG_ENABLED=true`; it is disabled by default and frontend citation panels are
-still a later SPEC-013 task.
+`RAG_ENABLED=true`; it is disabled by default.
 
 Start the backend service after migrations and seeding:
 
@@ -229,11 +238,25 @@ Metadata JSON: {"tags":{"source":"board-demo"},"attributes":{}}
     stages up to approval.
 21. Confirm the detail page refreshes persisted events and the live timeline
     remains visible.
-22. Optional RBAC checkpoint: sign out, sign in as `sales@example.test`, open a
+22. If `RAG_ENABLED=true` and demo knowledge was ingested before the run, inspect
+    the Evidence and citations panel. It should show compliance,
+    validation/finance, and approval citations with source title/type, citation
+    label, excerpt, score, stage, and document id.
+23. Use the Knowledge search panel with a query such as:
+
+```text
+procurement policy approval evidence
+```
+
+24. Confirm search results show bounded citation excerpts, or an honest empty
+    state if the knowledge collection has not been ingested.
+25. Confirm the Demo documents catalog lists the deterministic policy,
+    contract, supplier, pricing, and compliance-checklist documents.
+26. Optional RBAC checkpoint: sign out, sign in as `sales@example.test`, open a
     workflow detail page, and run the workflow. The backend should reject the
     run action with a clear 403-style message because Sales can create/read but
     cannot run workflows.
-23. Optional approval RBAC checkpoint: sign in as `viewer@example.test`, open
+27. Optional approval RBAC checkpoint: sign in as `viewer@example.test`, open
     the waiting-approval workflow, and try an approval action. The backend
     should reject the decision with an understandable forbidden message.
 
@@ -258,7 +281,13 @@ Metadata JSON: {"tags":{"source":"board-demo"},"attributes":{}}
   implemented.
 - Demo knowledge documents can be ingested into MinIO/Qdrant and searched
   through authenticated backend knowledge APIs. Runtime grounding is opt-in with
-  `RAG_ENABLED=true`; frontend citation display is not wired yet.
+  `RAG_ENABLED=true`.
+- Workflow detail shows an honest empty evidence state when no RAG citations
+  are attached.
+- RAG-enabled runs with ingested demo knowledge can show bounded citations in
+  the Evidence and citations panel.
+- Knowledge search/catalog surfaces use existing `/api/v1/knowledge` endpoints
+  and do not expose raw embeddings or raw vector payloads.
 
 ## Troubleshooting
 
@@ -321,6 +350,32 @@ docker-compose logs minio
 
 The ingestion CLI requires Qdrant and MinIO. It does not affect workflow seed
 records or frontend behavior if those services are unavailable.
+
+### Evidence Panel Is Empty
+
+The evidence panel is populated only after all of the following are true:
+
+```text
+RAG_ENABLED=true
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo
+workflow runtime has run after RAG was enabled
+```
+
+With `RAG_ENABLED=false`, or before a RAG-enabled run attaches citations, the
+frontend correctly shows that no retrieved evidence has been attached yet.
+
+### Knowledge Search Returns No Results
+
+Confirm Qdrant and MinIO are running, then rerun the ingestion command:
+
+```bash
+docker-compose up -d qdrant minio
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo
+```
+
+Search and catalog endpoints require a valid frontend session. A 403 indicates
+the backend rejected the current role/session. A 503 indicates the retrieval
+provider is unavailable or the vector collection cannot be reached.
 
 ### Frontend Cannot Reach Backend
 

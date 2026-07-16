@@ -4,9 +4,11 @@ Use this checklist after running the demo seed command from
 `docs/demo/DEMO_RUNBOOK.md`.
 
 The demo runbook may also ingest the local-demo knowledge base with
-`python -m app.knowledge.ingest_demo --confirm-local-demo`. TASK 013.3 only
-loads deterministic documents into MinIO/Qdrant for later RAG work; the
-frontend does not yet display citations or knowledge search results.
+`python -m app.knowledge.ingest_demo --confirm-local-demo`. With
+`RAG_ENABLED=true`, runtime grounding can attach bounded citations that the
+workflow detail evidence panel displays. The frontend also includes lightweight
+knowledge search and document catalog surfaces that use the existing backend
+knowledge endpoints.
 
 ## Environment
 
@@ -83,8 +85,35 @@ token is present.
 - Open `/workflows/b0111d45-aff5-5b86-9ffd-9417704c9bab`.
 - Confirm status is `WAITING_APPROVAL`.
 - Confirm request/state details are visible.
+- Confirm the Evidence and citations panel is visible.
+- If no RAG-enabled runtime evidence exists, confirm the panel says no
+  retrieved evidence has been attached yet.
 - Confirm persisted event backlog includes runtime/stage events.
 - Confirm event payload previews are bounded and readable.
+
+### Evidence And Knowledge Search
+
+- After running a workflow with `RAG_ENABLED=true` and ingested demo knowledge,
+  confirm the Evidence and citations panel shows populated citation cards.
+- Confirm citation cards show source title, source type, citation label,
+  excerpt, relevance score, stage, and document id.
+- Confirm long excerpts remain bounded and do not break the layout.
+- Confirm raw embeddings, raw vector payloads, raw prompts, provider payloads,
+  secrets, and chain-of-thought fields are not displayed.
+- Use Knowledge search with:
+
+```text
+procurement policy approval evidence
+```
+
+- Confirm populated search results appear after ingestion, or an honest empty
+  state appears if no vector results are available.
+- Confirm a 403 response shows a readable forbidden message.
+- Confirm a 503 response shows a retrieval-unavailable message.
+- Confirm Demo documents lists deterministic policy, contract, supplier,
+  pricing, and compliance-checklist metadata.
+- Confirm no upload UI, admin document-management UI, delete/edit controls, or
+  ingestion trigger UI appears.
 
 ### Approval Panel And History
 
@@ -138,6 +167,8 @@ token is present.
   refresh. Live WebSocket streaming remains the existing SPEC-008 behavior.
 - Confirm no fake streamed events are created when Redis or WebSocket delivery
   is unavailable.
+- Confirm RAG grounding events remain ordinary persisted/live workflow events;
+  the frontend does not create fake streamed evidence.
 
 ### Create Workflow
 
@@ -187,6 +218,8 @@ Capture these for final presentation if screenshots are needed:
 - Runtime result panel after selecting `Run workflow`.
 - Approval panel on a `WAITING_APPROVAL` workflow.
 - Approval history after approve or request changes.
+- Evidence and citations panel with populated RAG citations, if RAG is enabled.
+- Knowledge search results and demo document catalog after ingestion.
 - Resume action and completed state after explicit resume.
 - Timeline showing approval/resume events.
 - RBAC denial message from a role that cannot run workflows.
@@ -204,7 +237,8 @@ Capture these for final presentation if screenshots are needed:
 ## Known Limitations
 
 - No real LLM provider behavior yet.
-- No RAG retrieval UI, citation panel, or document upload/indexing UI yet.
+- No document upload/indexing UI yet.
+- No admin document-management UI yet.
 - No admin user-management UI yet.
 - No production deployment automation yet.
 - No fake live events should be used to mask backend or Redis issues.

@@ -201,5 +201,11 @@ TASK 013.5 adds backend runtime RAG grounding behind `RAG_ENABLED=false` by
 default. When explicitly enabled, compliance, validation/finance, and approval
 runtime stages can attach bounded citation summaries from the knowledge
 retrieval service into workflow state and append safe `knowledge.grounding.*`
-events. Frontend evidence panels, upload UI, migrations, and database models
-remain deferred to later SPEC-013 tasks.
+events.
+
+TASK 013.6 adds the frontend workflow evidence panel and lightweight knowledge
+search/catalog surfaces. The panel displays only bounded citation objects from
+workflow state or loaded grounding events when those events contain citation
+objects. It does not show raw embeddings, raw vector payloads, raw prompts,
+full documents, upload UI, admin document-management UI, migrations, or new
+database models.

@@ -89,6 +89,7 @@ export interface WorkflowState {
   email?: Record<string, unknown>;
   current_step?: string | null;
   runtime_context?: Record<string, unknown>;
+  stage_outputs?: Partial<Record<RuntimeStage, Record<string, unknown>>>;
   outputs?: Record<string, unknown>;
   steps?: WorkflowStepState[];
   retry_count?: number;
@@ -277,4 +278,82 @@ export interface WorkflowTimelineEvent {
   sequence?: number | null;
   payload: Record<string, unknown>;
   source: WorkflowTimelineEventSource;
+}
+
+export type KnowledgeDocumentSourceType =
+  | "policy"
+  | "contract"
+  | "pricing"
+  | "supplier_profile"
+  | "rfq"
+  | "guideline"
+  | "compliance_checklist";
+
+export interface KnowledgeCitation {
+  citation_id: string;
+  document_id: string;
+  document_title: string;
+  source_type: KnowledgeDocumentSourceType;
+  section?: string | null;
+  page?: number | null;
+  excerpt: string;
+  relevance_score: number;
+  citation_label: string;
+}
+
+export interface KnowledgeRetrievalResult {
+  chunk_id: string;
+  document_id: string;
+  chunk_text: string;
+  score: number;
+  source_type: KnowledgeDocumentSourceType;
+  document_title: string;
+  domain: string;
+  citation: KnowledgeCitation;
+  metadata: Record<string, JsonValue>;
+}
+
+export interface KnowledgeSearchRequest {
+  query: string;
+  top_k?: number;
+  source_types?: KnowledgeDocumentSourceType[];
+  domain?: string | null;
+  document_ids?: string[];
+  minimum_score?: number | null;
+}
+
+export interface KnowledgeSearchResponse {
+  query: string;
+  results: KnowledgeRetrievalResult[];
+}
+
+export interface KnowledgeDocumentCatalogItem {
+  document_id: string;
+  title: string;
+  source_type: KnowledgeDocumentSourceType;
+  domain: string;
+  version?: string | null;
+  effective_date?: string | null;
+  owner_team?: string | null;
+  object_storage_key?: string | null;
+  checksum?: string | null;
+  content_type?: string | null;
+  dataset_path?: string | null;
+  tags: string[];
+  attributes: Record<string, JsonValue>;
+}
+
+export interface KnowledgeDocumentListResponse {
+  documents: KnowledgeDocumentCatalogItem[];
+  count: number;
+}
+
+export interface KnowledgeDocumentDetailResponse {
+  document: KnowledgeDocumentCatalogItem;
+  content_preview?: string | null;
+}
+
+export interface WorkflowEvidenceCitation extends KnowledgeCitation {
+  stage?: RuntimeStage | string | null;
+  reason?: string | null;
 }

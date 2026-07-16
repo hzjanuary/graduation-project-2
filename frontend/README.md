@@ -8,7 +8,9 @@ client helpers, a local-development token session layer, the first authenticated
 dashboard shell, workflow list/detail pages, and workflow create/run actions.
 Workflow detail pages now include a live WebSocket event timeline backed by the
 existing SPEC-008 stream endpoint and a SPEC-012 approval/resume panel backed by
-the existing approval and resume workflow endpoints.
+the existing approval and resume workflow endpoints. SPEC-013 adds read-only
+knowledge search/catalog clients and a workflow evidence panel for bounded RAG
+citations already attached by the backend runtime.
 
 ## Requirements
 
@@ -151,6 +153,23 @@ Implemented in TASK 012.5:
   actions, comment validation, history rendering, resume behavior, and
   backend-authoritative error handling
 
+Implemented in TASK 013.6:
+
+- Knowledge API client helpers for `POST /api/v1/knowledge/search`,
+  `GET /api/v1/knowledge/documents`, and
+  `GET /api/v1/knowledge/documents/{document_id}`
+- Backend-aligned knowledge document, retrieval result, and citation DTO types
+- Workflow detail evidence/citations panel that reads bounded citation objects
+  from `runtime_context.rag`, `outputs.evidence`, `stage_outputs`, and loaded
+  grounding events when those events contain citation objects
+- Lightweight knowledge search panel and demo document catalog display on the
+  workflow detail page
+- Empty, loading, 401, 403, 404, 422, 503, and generic error states for
+  knowledge surfaces where applicable
+- Unit/component tests for knowledge request shapes, bearer-token attachment,
+  evidence extraction/rendering, sensitive raw-field suppression, search
+  results, empty states, and catalog rendering
+
 ## Dashboard Shell
 
 The dashboard shell is available at:
@@ -178,6 +197,11 @@ Workflow detail pages also include human approval controls for
 `WAITING_APPROVAL` workflows and an explicit post-approval resume action for
 approved workflows. Approval and resume authorization is enforced by the
 backend; frontend role hints are not treated as security decisions.
+Workflow detail pages also include an evidence/citations panel and lightweight
+knowledge search/catalog surfaces. Populated evidence requires backend RAG to
+be explicitly enabled, demo knowledge to be ingested, and a workflow run to
+attach citations. The frontend never fabricates evidence and does not expose
+raw embeddings, raw vector payloads, prompts, or object-storage internals.
 
 ## Auth And API Client
 
@@ -225,4 +249,5 @@ docs/demo/FRONTEND_SMOKE_FLOW.md
 
 They cover Docker startup, migrations, the explicit demo seed command, local
 demo credentials, workflow list/detail/create/run checkpoints, live timeline
-checks, and troubleshooting.
+checks, optional knowledge ingestion, RAG evidence checks, approval/resume, and
+troubleshooting.

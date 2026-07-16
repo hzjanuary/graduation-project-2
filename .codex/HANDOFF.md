@@ -19,7 +19,7 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-013 RAG and Document Knowledge Base - TASK 013.5 implemented / pending review
+- SPEC-013 RAG and Document Knowledge Base - TASK 013.6 implemented / pending review
 
 ## Current SPEC-013 Planning State
 
@@ -49,8 +49,8 @@ Scope:
 - Plan explicit local/demo ingestion only; no backend startup auto-ingestion.
 - Keep runtime grounding behind `RAG_ENABLED=false` by default and preserve
   current deterministic `/run`, approval, and `/resume` behavior.
-- Add frontend evidence/citation display only as a later bounded task, without
-  upload UI or full document-management UI.
+- Add frontend evidence/citation display as a bounded task, without upload UI
+  or full document-management UI.
 
 Deferrals:
 
@@ -270,6 +270,50 @@ Behavior:
 - Does not add frontend behavior, API contract changes, migrations, database
   models, provider SDKs, upload UI, token streaming, raw embeddings, raw vector
   payload persistence, or chat LLM calls from grounding code.
+
+## TASK 013.6 Implementation State
+
+Deliverables:
+
+- `frontend/lib/api/types.ts` updated with knowledge/citation DTOs
+- `frontend/lib/api/knowledge.ts`
+- `frontend/components/workflows/workflow-evidence-panel.tsx`
+- `frontend/components/knowledge/knowledge-search-panel.tsx`
+- `frontend/components/knowledge/knowledge-document-list.tsx`
+- `frontend/components/workflows/workflow-detail-view.tsx` updated
+- `frontend/tests/knowledge-api.test.ts`
+- `frontend/tests/workflow-evidence.test.tsx`
+- `frontend/tests/workflow-pages.test.tsx` updated
+- `frontend/README.md` updated
+- `docs/demo/DEMO_RUNBOOK.md` updated
+- `docs/demo/FRONTEND_SMOKE_FLOW.md` updated
+- `docs/demo/DATASET_INVENTORY.md` updated
+
+Behavior:
+
+- Adds typed frontend knowledge API helpers for:
+  `POST /api/v1/knowledge/search`,
+  `GET /api/v1/knowledge/documents`, and
+  `GET /api/v1/knowledge/documents/{document_id}`.
+- Adds workflow evidence/citation display on workflow detail pages. The panel
+  extracts bounded citation objects from `runtime_context.rag`,
+  `outputs.evidence`, `stage_outputs`, and loaded grounding events when those
+  events include citation objects.
+- Shows an honest empty state when no RAG evidence is attached and never
+  fabricates evidence or streamed events.
+- Adds lightweight knowledge search and demo document catalog components using
+  existing authenticated backend knowledge endpoints.
+- Handles loading, empty, 401/403/404/422/503, and generic error states where
+  applicable.
+- Suppresses raw embeddings, raw vector payloads, raw prompts, provider
+  payloads, secrets, and chain-of-thought fields from evidence rendering.
+- Updates demo docs for knowledge ingestion, `RAG_ENABLED=true`, evidence
+  panel checks, knowledge search/catalog checks, and no-key fake-embedding
+  behavior.
+- Does not modify backend code, runtime behavior, knowledge API backend
+  behavior, workflow API behavior, demo ingestion behavior, migrations, database
+  models, upload UI, admin document-management UI, provider-management UI,
+  token streaming, agent-thought display, or frontend dependencies.
 
 ## Current SPEC-012 Planning State
 

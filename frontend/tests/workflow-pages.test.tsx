@@ -95,6 +95,10 @@ describe("workflow pages", () => {
         has_final_decision: false,
         can_resume: false,
       },
+      {
+        documents: [],
+        count: 0,
+      },
     ]);
 
     await render(<WorkflowDetailView workflowId="workflow-123" />);
@@ -102,6 +106,10 @@ describe("workflow pages", () => {
     expect(document.body.textContent).toContain("workflow-123");
     expect(document.body.textContent).toContain("Request summary");
     expect(document.body.textContent).toContain("Approval history");
+    expect(document.body.textContent).toContain("Evidence and citations");
+    expect(document.body.textContent).toContain("No retrieved evidence has been attached yet.");
+    expect(document.body.textContent).toContain("Search demo knowledge");
+    expect(document.body.textContent).toContain("Demo documents");
     expect(document.body.textContent).toContain("Event timeline");
     expect(document.body.textContent).toContain("runtime.started");
     expect(document.body.textContent).toContain("Runtime started");
