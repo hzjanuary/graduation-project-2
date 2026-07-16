@@ -35,6 +35,9 @@ NEXT_PUBLIC_WS_BASE_URL=ws://localhost:8000/api/v1
 Do not put secrets in `NEXT_PUBLIC_*` variables. They are exposed to the
 browser by design.
 
+Deployment environment profiles and production-demo public URL templates are
+documented in `../docs/deployment/ENVIRONMENT.md`.
+
 ## Install
 
 ```bash

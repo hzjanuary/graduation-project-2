@@ -19,7 +19,24 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-014 Production Deployment and Observability - planning complete / pending review
+- SPEC-014 Production Deployment and Observability - TASK 014.1 implemented / pending review
+
+## Current TASK 014.1 Implementation State
+
+Implemented:
+
+- Added deployment environment documentation under `docs/deployment/`.
+- Added placeholder-only production-demo and CI/test environment templates.
+- Annotated backend and frontend local-demo `.env.example` files without
+  changing their default values.
+- Linked deployment environment guidance from the root, backend, and frontend
+  READMEs.
+
+Scope boundaries preserved:
+
+- No Dockerfile, Docker Compose, CI workflow, readiness, observability, runtime,
+  backend behavior, frontend behavior, migrations, database models, cloud
+  resources, or real secrets were added.
 
 ## Current SPEC-014 Planning State
 

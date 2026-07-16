@@ -144,6 +144,8 @@ LOG_LEVEL=DEBUG
 ```
 
 Do not commit real API keys, database credentials, or object storage secrets.
+Deployment environment profiles for local demo, CI/test, and production-demo
+are documented in `../docs/deployment/ENVIRONMENT.md`.
 
 ### LLM Provider Configuration
 
