@@ -162,6 +162,10 @@ RAG grounding:
 - `RAG_MAX_CONTEXT_CHARS`
 - `RAG_EVENT_PAYLOAD_MAX_CHARS`
 
+Readiness:
+
+- `READINESS_TIMEOUT_SECONDS`
+
 Only document variables supported by the current settings module here. Trusted
 host allowlists, production secret vault settings, and deployment-specific
 reverse proxy settings are deferred until the implementation tasks that add
@@ -210,6 +214,9 @@ Before running a production-demo deployment:
 - Keep LLM provider keys empty unless a real provider is intentionally enabled.
 - Confirm the backend does not auto-seed demo workflows or auto-ingest
   knowledge on startup.
+- Use `/health` and `/live` for process checks.
+- Use `/ready` for bounded dependency checks against Postgres, Redis, Qdrant,
+  and MinIO/object storage.
 
 ## Optional RAG-Enabled Demo
 

@@ -144,6 +144,12 @@ class Settings(BaseSettings):
         le=10000,
         alias="RAG_EVENT_PAYLOAD_MAX_CHARS",
     )
+    readiness_timeout_seconds: float = Field(
+        default=2.0,
+        ge=0.1,
+        le=30.0,
+        alias="READINESS_TIMEOUT_SECONDS",
+    )
 
     @property
     def backend_cors_origins(self) -> tuple[str, ...]:

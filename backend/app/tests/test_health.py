@@ -2,11 +2,14 @@
 
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.config import AppEnvironment, Settings
+from app.core.dependencies import provide_readiness_checker
 from app.main import create_app
 from app.middleware import REQUEST_ID_HEADER
+from app.schemas import ReadinessDependencyStatus, ReadinessDependencyStatusValue
 
 
 def build_client() -> TestClient:
@@ -50,20 +53,99 @@ def test_health_returns_ok_status() -> None:
     assert isinstance(data["timestamp"], str)
 
 
-def test_ready_returns_lightweight_readiness() -> None:
-    client = build_client()
+class FakeReadinessChecker:
+    """Readiness checker stub for health route tests."""
+
+    def __init__(self, checks: list[ReadinessDependencyStatus]) -> None:
+        self.checks = checks
+        self.called = False
+
+    async def check_all(self) -> list[ReadinessDependencyStatus]:
+        self.called = True
+        return self.checks
+
+
+class FailingReadinessChecker:
+    """Checker that fails if lightweight health routes call readiness checks."""
+
+    async def check_all(self) -> list[ReadinessDependencyStatus]:
+        raise AssertionError("readiness checker should not be called")
+
+
+def dependency_status(
+    name: str,
+    status: ReadinessDependencyStatusValue = "ok",
+) -> ReadinessDependencyStatus:
+    return ReadinessDependencyStatus(
+        name=name,
+        status=status,
+        required=True,
+        latency_ms=1.0,
+        message="ready" if status == "ok" else "dependency check failed",
+    )
+
+
+def test_ready_returns_dependency_readiness() -> None:
+    app = create_app(Settings())
+    checker = FakeReadinessChecker(
+        [
+            dependency_status("postgres"),
+            dependency_status("redis"),
+            dependency_status("qdrant"),
+            dependency_status("object_storage"),
+        ],
+    )
+    app.dependency_overrides[provide_readiness_checker] = lambda: checker
+    client = TestClient(app)
 
     response = client.get("/ready")
     data = response_json(response)
 
     assert response.status_code == 200
-    assert data == {
-        "status": "ready",
-        "checks": {
-            "application": "ready",
-            "external_services": "not_configured",
-        },
-    }
+    assert data["status"] == "ready"
+    assert isinstance(data["timestamp"], str)
+    assert [check["name"] for check in data["checks"]] == [
+        "postgres",
+        "redis",
+        "qdrant",
+        "object_storage",
+    ]
+    assert {check["status"] for check in data["checks"]} == {"ok"}
+    assert checker.called is True
+
+
+def test_ready_returns_503_when_dependency_fails() -> None:
+    app = create_app(Settings())
+    checker = FakeReadinessChecker(
+        [
+            dependency_status("postgres"),
+            dependency_status("redis", "failed"),
+            dependency_status("qdrant"),
+            dependency_status("object_storage"),
+        ],
+    )
+    app.dependency_overrides[provide_readiness_checker] = lambda: checker
+    client = TestClient(app)
+
+    response = client.get("/ready")
+    data = response_json(response)
+
+    assert response.status_code == 503
+    assert data["status"] == "not_ready"
+    assert data["checks"][1]["name"] == "redis"
+    assert data["checks"][1]["status"] == "failed"
+
+
+def test_health_and_live_do_not_call_readiness_checker() -> None:
+    app = create_app(Settings())
+    app.dependency_overrides[provide_readiness_checker] = FailingReadinessChecker
+    client = TestClient(app)
+
+    health_response = client.get("/health")
+    live_response = client.get("/live")
+
+    assert health_response.status_code == 200
+    assert live_response.status_code == 200
 
 
 def test_live_returns_alive_status() -> None:
@@ -84,3 +166,24 @@ def test_health_response_includes_request_id_header() -> None:
 
     assert response.status_code == 200
     assert response.headers[REQUEST_ID_HEADER]
+
+
+def test_app_startup_does_not_run_demo_seed_or_knowledge_ingestion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.demo import seed as demo_seed
+    from app.knowledge import ingest_demo
+
+    def fail_if_called(*args: object, **kwargs: object) -> object:
+        raise AssertionError("startup must not run demo seed or knowledge ingestion")
+
+    monkeypatch.setattr(demo_seed, "run_demo_seed", fail_if_called)
+    monkeypatch.setattr(
+        ingest_demo,
+        "run_demo_knowledge_ingestion",
+        fail_if_called,
+    )
+
+    client = TestClient(create_app(Settings()))
+
+    assert client.get("/health").status_code == 200

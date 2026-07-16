@@ -3,14 +3,19 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 
 from app.config import Settings
-from app.core.dependencies import provide_settings
+from app.core.dependencies import provide_readiness_checker, provide_settings
+from app.core.readiness import ReadinessChecker
 from app.schemas import HealthResponse, LiveResponse, ReadyResponse, RootResponse
 
 API_VERSION = "0.1.0"
 SettingsDependency = Annotated[Settings, Depends(provide_settings)]
+ReadinessCheckerDependency = Annotated[
+    ReadinessChecker,
+    Depends(provide_readiness_checker),
+]
 
 router = APIRouter(tags=["health"])
 
@@ -44,15 +49,24 @@ async def health(settings: SettingsDependency) -> HealthResponse:
     )
 
 
-@router.get("/ready", response_model=ReadyResponse)
-async def ready() -> ReadyResponse:
-    """Return lightweight readiness until external clients are implemented."""
+@router.get(
+    "/ready",
+    response_model=ReadyResponse,
+    responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": ReadyResponse}},
+)
+async def ready(
+    checker: ReadinessCheckerDependency,
+    response: Response,
+) -> ReadyResponse:
+    """Return dependency readiness for required infrastructure."""
+    checks = await checker.check_all()
+    is_ready = all(check.status == "ok" for check in checks if check.required)
+    if not is_ready:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return ReadyResponse(
-        status="ready",
-        checks={
-            "application": "ready",
-            "external_services": "not_configured",
-        },
+        status="ready" if is_ready else "not_ready",
+        timestamp=utc_now(),
+        checks=checks,
     )
 
 

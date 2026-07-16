@@ -31,8 +31,22 @@ class HealthResponse(BaseModel):
 class ReadyResponse(BaseModel):
     """Readiness response."""
 
-    status: Literal["ready"]
-    checks: dict[str, str]
+    status: Literal["ready", "not_ready"]
+    timestamp: datetime
+    checks: list["ReadinessDependencyStatus"]
+
+
+ReadinessDependencyStatusValue = Literal["ok", "failed", "skipped"]
+
+
+class ReadinessDependencyStatus(BaseModel):
+    """Per-dependency readiness check result."""
+
+    name: str
+    status: ReadinessDependencyStatusValue
+    required: bool
+    latency_ms: float | None = None
+    message: str | None = None
 
 
 class LiveResponse(BaseModel):

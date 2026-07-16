@@ -40,12 +40,16 @@ The backend exposes lightweight service endpoints:
 ```text
 GET /       service metadata and endpoint links
 GET /health overall application health
-GET /ready  readiness with lightweight placeholder checks
+GET /ready  dependency readiness for required infrastructure
 GET /live   liveness status
 ```
 
-Readiness does not perform database, Redis, Qdrant, or MinIO checks yet. Those
-clients are introduced by later implementation tasks.
+`/health` and `/live` are process-level checks and do not call external
+dependencies. `/ready` checks Postgres, Redis, Qdrant, and MinIO/object storage
+with bounded non-mutating probes. It returns `200` only when all required
+dependencies are ready and `503` with safe per-dependency summaries when one or
+more checks fail. The readiness timeout is controlled by
+`READINESS_TIMEOUT_SECONDS` and defaults to `2.0`.
 
 ## Database
 
@@ -790,6 +794,10 @@ The additive production-demo Compose stack is defined at
 `../docker-compose.prod.yml` and documented in `../docs/deployment/README.md`.
 It keeps backend runtime packaging separate from the `backend-test` dev target
 and does not auto-run demo seed or knowledge ingestion commands.
+
+The container healthcheck intentionally uses `/health` to avoid cascading
+restarts while dependencies start. Use `/ready` for deployment readiness and
+dependency diagnostics.
 
 ## Logging And Middleware
 

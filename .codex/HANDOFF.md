@@ -19,7 +19,28 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-014 Production Deployment and Observability - TASK 014.2 implemented / pending review
+- SPEC-014 Production Deployment and Observability - TASK 014.3 implemented / pending review
+
+## Current TASK 014.3 Implementation State
+
+Implemented:
+
+- Added bounded backend readiness dependency checks for Postgres, Redis,
+  Qdrant, and MinIO/object storage.
+- Kept `/health` and `/live` lightweight process checks.
+- Updated `/ready` to return safe typed per-dependency summaries and `503`
+  when required dependencies fail.
+- Added `READINESS_TIMEOUT_SECONDS` with safe defaults in settings and env
+  templates.
+- Added deterministic readiness route/service/settings tests, including
+  timeout and sanitized failure coverage.
+
+Scope boundaries preserved:
+
+- No observability/metrics implementation, CI workflow, startup seeding,
+  knowledge ingestion, migration startup behavior, runtime workflow behavior,
+  workflow API behavior, knowledge API behavior, frontend behavior, migrations,
+  database models, cloud resources, or real secrets were added.
 
 ## Current TASK 014.2 Implementation State
 

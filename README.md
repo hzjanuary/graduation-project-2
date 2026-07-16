@@ -285,7 +285,7 @@ LLM provider setup and local demo guidance are documented in:
 ```
 GET /       Service metadata and endpoint links
 GET /health Overall application health
-GET /ready  Readiness check
+GET /ready  Dependency readiness check
 GET /live   Liveness status
 ```
 

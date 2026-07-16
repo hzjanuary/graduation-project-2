@@ -10,6 +10,8 @@ from app.schemas.auth import (
 from app.schemas.health import (
     HealthResponse,
     LiveResponse,
+    ReadinessDependencyStatus,
+    ReadinessDependencyStatusValue,
     ReadyResponse,
     RootResponse,
 )
@@ -29,6 +31,8 @@ __all__ = [
     "CurrentUserResponse",
     "HealthResponse",
     "LiveResponse",
+    "ReadinessDependencyStatus",
+    "ReadinessDependencyStatusValue",
     "LoginRequest",
     "LogoutResponse",
     "ReadyResponse",

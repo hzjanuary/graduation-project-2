@@ -38,3 +38,18 @@ knowledge ingestion automatically.
 By default, only the frontend and backend ports are published. Postgres, Redis,
 Qdrant, and MinIO stay on the internal Compose network. Do not expose stateful
 service ports publicly without explicit network and credential hardening.
+
+## Health And Readiness
+
+Backend process checks:
+
+- `GET /health` stays lightweight and reports that the app process responds.
+- `GET /live` stays lightweight and reports liveness.
+- `GET /ready` checks required infrastructure: Postgres, Redis, Qdrant, and
+  MinIO/object storage.
+
+The Compose backend healthcheck remains on `/health` so dependency startup does
+not cause backend container restart loops. Use `/ready` for deployment
+readiness gates and diagnostics. Readiness checks are bounded by
+`READINESS_TIMEOUT_SECONDS` and never run migrations, demo seed, knowledge
+ingestion, Qdrant upserts, MinIO writes, LLM calls, or email sending.

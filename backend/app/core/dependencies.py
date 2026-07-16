@@ -7,6 +7,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
+from app.core.readiness import ReadinessChecker
 from app.db import get_db_session
 from app.knowledge.embeddings import create_embedding_service
 from app.knowledge.ingestion import DEFAULT_KNOWLEDGE_COLLECTION_NAME
@@ -32,6 +33,13 @@ if TYPE_CHECKING:
 def provide_settings() -> Settings:
     """Provide typed application settings for dependency injection."""
     return get_settings()
+
+
+def provide_readiness_checker(
+    settings: Annotated[Settings, Depends(provide_settings)],
+) -> ReadinessChecker:
+    """Provide the deployment readiness checker."""
+    return ReadinessChecker(settings)
 
 
 async def provide_db_session() -> AsyncIterator[AsyncSession]:

@@ -25,6 +25,7 @@ def test_settings_load_default_development_values() -> None:
     assert settings.llm_timeout_seconds == 30
     assert settings.llm_max_retries == 2
     assert settings.ollama_base_url == "http://localhost:11434"
+    assert settings.readiness_timeout_seconds == 2.0
 
 
 def test_settings_can_be_overridden_by_environment(
@@ -63,6 +64,7 @@ def test_settings_can_be_overridden_by_environment(
     monkeypatch.setenv("GEMINI_MODEL", "gemini-model")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://ollama:11434")
     monkeypatch.setenv("OLLAMA_MODEL", "ollama-model")
+    monkeypatch.setenv("READINESS_TIMEOUT_SECONDS", "5.5")
 
     settings = Settings()
 
@@ -99,6 +101,7 @@ def test_settings_can_be_overridden_by_environment(
     assert settings.gemini_model == "gemini-model"
     assert settings.ollama_base_url == "http://ollama:11434"
     assert settings.ollama_model == "ollama-model"
+    assert settings.readiness_timeout_seconds == 5.5
 
 
 def test_testing_environment_can_be_configured(monkeypatch: pytest.MonkeyPatch) -> None:
