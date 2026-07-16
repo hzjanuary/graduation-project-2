@@ -19,7 +19,7 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-013 RAG and Document Knowledge Base - TASK 013.4 implemented / pending review
+- SPEC-013 RAG and Document Knowledge Base - TASK 013.5 implemented / pending review
 
 ## Current SPEC-013 Planning State
 
@@ -233,6 +233,43 @@ Behavior:
 - Does not implement runtime RAG grounding, frontend citation panels, upload
   UI, migrations, database models, real embedding providers, chat LLM calls,
   workflow event publishing, or backend startup auto-ingestion.
+
+## TASK 013.5 Implementation State
+
+Deliverables:
+
+- `backend/app/runtime/rag_adapter.py`
+- `backend/app/runtime/service.py` updated
+- `backend/app/runtime/__init__.py` updated
+- `backend/app/config/settings.py` updated with safe RAG env wiring
+- `backend/.env.example` updated with RAG env defaults
+- `backend/app/core/dependencies.py` updated with conditional retrieval wiring
+- `backend/app/tests/test_runtime_rag_grounding.py`
+- `backend/README.md` updated
+- `docs/demo/DEMO_RUNBOOK.md` updated
+- `docs/demo/DATASET_INVENTORY.md` updated
+
+Behavior:
+
+- Adds `RAG_ENABLED=false` plus bounded `RAG_TOP_K`,
+  `RAG_MINIMUM_SCORE`, `RAG_MAX_CONTEXT_CHARS`, and
+  `RAG_EVENT_PAYLOAD_MAX_CHARS` settings.
+- Adds provider-independent runtime grounding through
+  `RuntimeRAGGroundingAdapter`, depending only on the
+  `KnowledgeRetrievalService` search protocol.
+- Keeps the disabled path silent: no retrieval calls, no grounding events, and
+  existing deterministic `/run` and `/resume` behavior remain unchanged.
+- When enabled, retrieves evidence only for compliance, validation/finance, and
+  approval stages, attaches bounded citation summaries into `runtime_context.rag`,
+  `outputs.evidence`, and the current stage output, and appends safe
+  `knowledge.grounding.started`, `knowledge.grounding.completed`, and
+  `knowledge.grounding.failed` events.
+- Retrieval failures degrade safely with a bounded failure marker/event and do
+  not fail the workflow runtime.
+- Resume/email-preparation continuation does not perform RAG retrieval.
+- Does not add frontend behavior, API contract changes, migrations, database
+  models, provider SDKs, upload UI, token streaming, raw embeddings, raw vector
+  payload persistence, or chat LLM calls from grounding code.
 
 ## Current SPEC-012 Planning State
 

@@ -24,6 +24,7 @@ For the board-stable demo, keep LLM runtime mode disabled:
 ```text
 LLM_PROVIDER=fake
 LLM_RUNTIME_ENABLED=false
+RAG_ENABLED=false
 ```
 
 Optional real-provider local experimentation is documented separately in
@@ -82,8 +83,10 @@ docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confi
 The knowledge ingestion command is explicit and local-demo only. It chunks
 deterministic demo procurement documents, stores source text in MinIO, and
 upserts fake-embedded chunk vectors into Qdrant. Authenticated read-only
-knowledge search/catalog APIs are available under `/api/v1/knowledge`; runtime
-RAG grounding and frontend citation panels are still later SPEC-013 tasks.
+knowledge search/catalog APIs are available under `/api/v1/knowledge`.
+Feature-flagged backend runtime grounding can use those citations when
+`RAG_ENABLED=true`; it is disabled by default and frontend citation panels are
+still a later SPEC-013 task.
 
 Start the backend service after migrations and seeding:
 
@@ -254,8 +257,8 @@ Metadata JSON: {"tags":{"source":"board-demo"},"attributes":{}}
 - No screen claims that real LLM reasoning, RAG, or email sending is
   implemented.
 - Demo knowledge documents can be ingested into MinIO/Qdrant and searched
-  through authenticated backend knowledge APIs, but retrieval grounding is not
-  yet wired into runtime or frontend views.
+  through authenticated backend knowledge APIs. Runtime grounding is opt-in with
+  `RAG_ENABLED=true`; frontend citation display is not wired yet.
 
 ## Troubleshooting
 
@@ -372,8 +375,8 @@ Treat it as non-blocking if the frontend test command exits successfully.
 
 - Real LLM provider behavior is optional local experimentation only; the
   board-stable demo defaults to deterministic runtime mode.
-- Runtime RAG grounding and frontend citation display are not wired yet. TASK
-  013.4 adds backend knowledge search/catalog APIs only.
+- Runtime RAG grounding is backend-only and disabled by default. Frontend
+  citation display is not wired yet.
 - No document upload/indexing UI.
 - No admin user-management UI.
 - No production deployment automation.

@@ -22,6 +22,14 @@ from app.runtime.nodes import (
     run_retrieval_node,
     run_validation_node,
 )
+from app.runtime.rag_adapter import (
+    KNOWLEDGE_GROUNDING_COMPLETED_EVENT,
+    KNOWLEDGE_GROUNDING_FAILED_EVENT,
+    KNOWLEDGE_GROUNDING_STARTED_EVENT,
+    RAG_SUPPORTED_STAGES,
+    KnowledgeRetrievalServiceProtocol,
+    RuntimeRAGGroundingAdapter,
+)
 from app.runtime.schemas import (
     RUNTIME_STAGES,
     RuntimeStage,
@@ -51,9 +59,15 @@ __all__ = [
     "CompiledWorkflowGraph",
     "LLMCompletionService",
     "LLMRuntimeAdapter",
+    "KNOWLEDGE_GROUNDING_COMPLETED_EVENT",
+    "KNOWLEDGE_GROUNDING_FAILED_EVENT",
+    "KNOWLEDGE_GROUNDING_STARTED_EVENT",
+    "KnowledgeRetrievalServiceProtocol",
+    "RAG_SUPPORTED_STAGES",
     "RuntimeGraphEdge",
     "RuntimeNodeHandler",
     "RuntimeNodeHandlers",
+    "RuntimeRAGGroundingAdapter",
     "RuntimeService",
     "RuntimeStage",
     "RuntimeStatePayload",

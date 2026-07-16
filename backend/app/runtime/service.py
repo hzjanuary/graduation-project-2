@@ -18,6 +18,18 @@ from app.runtime.graph import (
 )
 from app.runtime.llm_adapter import LLMCompletionService, LLMRuntimeAdapter
 from app.runtime.nodes import create_deterministic_node_handlers
+from app.runtime.rag_adapter import (
+    DEFAULT_RAG_EVENT_PAYLOAD_MAX_CHARS,
+    DEFAULT_RAG_MAX_CONTEXT_CHARS,
+    DEFAULT_RAG_MINIMUM_SCORE,
+    DEFAULT_RAG_TOP_K,
+    KNOWLEDGE_GROUNDING_COMPLETED_EVENT,
+    KNOWLEDGE_GROUNDING_FAILED_EVENT,
+    KNOWLEDGE_GROUNDING_STARTED_EVENT,
+    KnowledgeRetrievalServiceProtocol,
+    RAGGroundingResult,
+    RuntimeRAGGroundingAdapter,
+)
 from app.runtime.schemas import (
     RuntimeStage,
     RuntimeWorkflowResult,
@@ -90,6 +102,12 @@ class RuntimeService:
         stages: Sequence[RuntimeStage] = PRE_APPROVAL_RUNTIME_STAGES,
         llm_settings: LLMSettings | None = None,
         llm_service: LLMCompletionService | None = None,
+        rag_enabled: bool = False,
+        knowledge_retrieval_service: KnowledgeRetrievalServiceProtocol | None = None,
+        rag_top_k: int = DEFAULT_RAG_TOP_K,
+        rag_minimum_score: float = DEFAULT_RAG_MINIMUM_SCORE,
+        rag_max_context_chars: int = DEFAULT_RAG_MAX_CONTEXT_CHARS,
+        rag_event_payload_max_chars: int = DEFAULT_RAG_EVENT_PAYLOAD_MAX_CHARS,
     ) -> None:
         self.workflow_service = workflow_service
         self.workflow_event_service = workflow_event_service
@@ -107,6 +125,20 @@ class RuntimeService:
         self.llm_adapter = (
             LLMRuntimeAdapter(self.llm_service)
             if self.llm_runtime_enabled and self.llm_service is not None
+            else None
+        )
+        if rag_enabled and knowledge_retrieval_service is None:
+            raise ValueError("RAG runtime mode requires a knowledge retrieval service")
+        self.rag_enabled = rag_enabled
+        self.rag_adapter = (
+            RuntimeRAGGroundingAdapter(
+                knowledge_retrieval_service,
+                top_k=rag_top_k,
+                minimum_score=rag_minimum_score,
+                max_context_chars=rag_max_context_chars,
+                event_payload_max_chars=rag_event_payload_max_chars,
+            )
+            if rag_enabled and knowledge_retrieval_service is not None
             else None
         )
         self.node_handlers = (
@@ -186,8 +218,19 @@ class RuntimeService:
                     payload=self._llm_stage_event_payload(stage),
                 )
 
+                runtime_payload = await self._ground_stage_if_enabled(
+                    workflow_id,
+                    runtime_payload,
+                    stage,
+                    actor_type=actor_type,
+                    actor_id=actor_id,
+                )
                 runtime_payload = await self._execute_stage(
                     stream,
+                    runtime_payload,
+                    stage,
+                )
+                runtime_payload = self._apply_existing_grounding_to_stage_output(
                     runtime_payload,
                     stage,
                 )
@@ -475,6 +518,10 @@ class RuntimeService:
         stage: RuntimeStage,
     ) -> RuntimeStatePayload:
         if self.llm_adapter is None or stage is RuntimeStage.EMAIL_PREPARATION:
+            if self.rag_adapter is not None and self.rag_adapter.supports_stage(stage):
+                runtime_state = RuntimeWorkflowState.model_validate(runtime_payload)
+                next_state = self.node_handlers[stage](runtime_state)
+                return cast(RuntimeStatePayload, next_state.model_dump(mode="json"))
             return self._next_stage_payload(stream, stage)
 
         runtime_state = RuntimeWorkflowState.model_validate(runtime_payload)
@@ -493,6 +540,97 @@ class RuntimeService:
                 mode="json",
             ),
         )
+
+    async def _ground_stage_if_enabled(
+        self,
+        workflow_id: UUID,
+        runtime_payload: RuntimeStatePayload,
+        stage: RuntimeStage,
+        *,
+        actor_type: str | None,
+        actor_id: UUID | None,
+    ) -> RuntimeStatePayload:
+        if self.rag_adapter is None or not self.rag_adapter.supports_stage(stage):
+            return runtime_payload
+
+        await self._append_runtime_event(
+            workflow_id,
+            KNOWLEDGE_GROUNDING_STARTED_EVENT,
+            WorkflowEventStatus.STARTED,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            message=f"Knowledge grounding for {stage.value} started.",
+            payload={"stage": stage.value, "top_k": self.rag_adapter.top_k},
+        )
+        runtime_state = RuntimeWorkflowState.model_validate(runtime_payload)
+        try:
+            result = await self.rag_adapter.retrieve_stage_grounding(
+                runtime_state,
+                stage,
+            )
+        except Exception as exc:
+            degraded_state = self.rag_adapter.failure_context(
+                runtime_state,
+                stage,
+                error_type=type(exc).__name__,
+            )
+            await self._append_runtime_event(
+                workflow_id,
+                KNOWLEDGE_GROUNDING_FAILED_EVENT,
+                WorkflowEventStatus.FAILED,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                message=f"Knowledge grounding for {stage.value} failed.",
+                payload={
+                    "stage": stage.value,
+                    "top_k": self.rag_adapter.top_k,
+                    **self._safe_rag_error_payload(exc),
+                },
+            )
+            return cast(RuntimeStatePayload, degraded_state.model_dump(mode="json"))
+
+        grounded_state = self.rag_adapter.apply_grounding(
+            runtime_state,
+            result,
+            include_stage_output=False,
+        )
+        await self._append_runtime_event(
+            workflow_id,
+            KNOWLEDGE_GROUNDING_COMPLETED_EVENT,
+            WorkflowEventStatus.COMPLETED,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            message=f"Knowledge grounding for {stage.value} completed.",
+            payload=self.rag_adapter.event_payload(result),
+        )
+        return cast(RuntimeStatePayload, grounded_state.model_dump(mode="json"))
+
+    def _apply_existing_grounding_to_stage_output(
+        self,
+        runtime_payload: RuntimeStatePayload,
+        stage: RuntimeStage,
+    ) -> RuntimeStatePayload:
+        if self.rag_adapter is None or not self.rag_adapter.supports_stage(stage):
+            return runtime_payload
+        runtime_state = RuntimeWorkflowState.model_validate(runtime_payload)
+        rag_context = runtime_state.runtime_context.get("rag")
+        if not isinstance(rag_context, dict):
+            return runtime_payload
+        raw_stages = rag_context.get("stages")
+        if not isinstance(raw_stages, dict):
+            return runtime_payload
+        raw_result = raw_stages.get(stage.value)
+        if not isinstance(raw_result, dict):
+            return runtime_payload
+        if raw_result.get("status") == "failed":
+            return runtime_payload
+        result = RAGGroundingResult.model_validate(raw_result)
+        grounded_state = self.rag_adapter.apply_grounding(
+            runtime_state,
+            result,
+            include_stage_output=True,
+        )
+        return cast(RuntimeStatePayload, grounded_state.model_dump(mode="json"))
 
     async def _handle_runtime_failure(
         self,
@@ -709,6 +847,12 @@ class RuntimeService:
         if payload.get("llm_error_category") == LLMErrorCategory.INVALID_RESPONSE.value:
             payload["retryable"] = False
         return payload
+
+    def _safe_rag_error_payload(self, exc: Exception) -> dict[str, Any]:
+        return {
+            "error_type": type(exc).__name__,
+            "rag_error": "knowledge_grounding_unavailable",
+        }
 
 
 __all__ = [

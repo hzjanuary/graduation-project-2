@@ -124,6 +124,26 @@ class Settings(BaseSettings):
         le=256,
         alias="EMBEDDING_BATCH_SIZE",
     )
+    rag_enabled: bool = Field(default=False, alias="RAG_ENABLED")
+    rag_top_k: int = Field(default=3, ge=1, le=20, alias="RAG_TOP_K")
+    rag_minimum_score: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        alias="RAG_MINIMUM_SCORE",
+    )
+    rag_max_context_chars: int = Field(
+        default=3000,
+        ge=100,
+        le=20000,
+        alias="RAG_MAX_CONTEXT_CHARS",
+    )
+    rag_event_payload_max_chars: int = Field(
+        default=2000,
+        ge=100,
+        le=10000,
+        alias="RAG_EVENT_PAYLOAD_MAX_CHARS",
+    )
 
     @property
     def backend_cors_origins(self) -> tuple[str, ...]:

@@ -197,5 +197,9 @@ fake embeddings for local/demo use, and queries Qdrant through the existing
 vector store abstraction. Results include bounded chunk text and citation
 metadata only; raw embeddings and raw vector payloads are not API responses.
 
-Runtime RAG grounding, frontend evidence panels, upload UI, migrations, and
-database models remain deferred to later SPEC-013 tasks.
+TASK 013.5 adds backend runtime RAG grounding behind `RAG_ENABLED=false` by
+default. When explicitly enabled, compliance, validation/finance, and approval
+runtime stages can attach bounded citation summaries from the knowledge
+retrieval service into workflow state and append safe `knowledge.grounding.*`
+events. Frontend evidence panels, upload UI, migrations, and database models
+remain deferred to later SPEC-013 tasks.

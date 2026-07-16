@@ -110,15 +110,33 @@ def provide_runtime_service(
     settings: Annotated[Settings | None, Depends(provide_settings)] = None,
 ) -> RuntimeService:
     """Provide runtime orchestration service bound to workflow services."""
-    llm_settings = (settings or provide_settings()).llm_settings
+    app_settings = settings or provide_settings()
+    llm_settings = app_settings.llm_settings
     llm_service = (
         LLMService(settings=llm_settings) if llm_settings.runtime_enabled else None
     )
+    knowledge_retrieval_service = None
+    if app_settings.rag_enabled:
+        from app.knowledge.retrieval import KnowledgeRetrievalService
+
+        vector_store = create_qdrant_vector_store(app_settings.qdrant_url)
+        embedding_service = create_embedding_service(app_settings.embedding_settings)
+        knowledge_retrieval_service = KnowledgeRetrievalService(
+            vector_store=vector_store,
+            embedding_service=embedding_service,
+            collection_name=DEFAULT_KNOWLEDGE_COLLECTION_NAME,
+        )
     return RuntimeService(
         workflow_service,
         workflow_event_service,
         llm_settings=llm_settings,
         llm_service=llm_service,
+        rag_enabled=app_settings.rag_enabled,
+        knowledge_retrieval_service=knowledge_retrieval_service,
+        rag_top_k=app_settings.rag_top_k,
+        rag_minimum_score=app_settings.rag_minimum_score,
+        rag_max_context_chars=app_settings.rag_max_context_chars,
+        rag_event_payload_max_chars=app_settings.rag_event_payload_max_chars,
     )
 
 

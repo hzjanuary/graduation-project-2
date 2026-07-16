@@ -488,6 +488,26 @@ This slice does not implement runtime RAG grounding, frontend evidence panels,
 migrations, database models, upload UI, real embedding providers, or chat LLM
 calls.
 
+TASK 013.5 adds feature-flagged runtime RAG grounding for compliance,
+validation/finance, and approval stages:
+
+```text
+RAG_ENABLED=false
+RAG_TOP_K=3
+RAG_MINIMUM_SCORE=0.0
+RAG_MAX_CONTEXT_CHARS=3000
+RAG_EVENT_PAYLOAD_MAX_CHARS=2000
+```
+
+`RAG_ENABLED=false` remains the safe default. When disabled, `/run` and
+`/resume` behave as before and the runtime does not call the knowledge
+retrieval service or emit grounding events. When explicitly enabled, the
+runtime uses `KnowledgeRetrievalService` to attach bounded citation summaries
+to workflow state for compliance, validation, and approval stages, and appends
+safe `knowledge.grounding.*` workflow events. It does not call chat LLM
+providers, expose raw embeddings/vector payloads, change API response shapes,
+or add frontend citation panels.
+
 ## Workflow State Foundation
 
 Workflow state schemas and lifecycle metadata live in `app/workflows`.
