@@ -786,6 +786,11 @@ curl http://localhost:8000/health
 The Docker Compose file uses development defaults only. Do not reuse demo
 passwords or API keys for production deployments.
 
+The additive production-demo Compose stack is defined at
+`../docker-compose.prod.yml` and documented in `../docs/deployment/README.md`.
+It keeps backend runtime packaging separate from the `backend-test` dev target
+and does not auto-run demo seed or knowledge ingestion commands.
+
 ## Logging And Middleware
 
 `app/main.py` wires the core middleware foundation:

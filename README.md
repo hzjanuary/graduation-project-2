@@ -258,6 +258,7 @@ poetry run mypy app
 See `backend/.env.example` for the full list. Never commit real secrets.
 Deployment environment profiles and production-demo templates are documented in
 `docs/deployment/ENVIRONMENT.md`.
+Production-demo Compose usage is documented in `docs/deployment/README.md`.
 LLM provider setup and local demo guidance are documented in:
 
 - `docs/llm/PROVIDER_SETUP.md`

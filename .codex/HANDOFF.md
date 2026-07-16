@@ -19,7 +19,25 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-014 Production Deployment and Observability - TASK 014.1 implemented / pending review
+- SPEC-014 Production Deployment and Observability - TASK 014.2 implemented / pending review
+
+## Current TASK 014.2 Implementation State
+
+Implemented:
+
+- Added additive `docker-compose.prod.yml` for the production-demo stack.
+- Added frontend production `Dockerfile` and `.dockerignore`.
+- Hardened the backend runtime image to run as a non-root app user.
+- Documented production-demo Compose validation/build commands under
+  `docs/deployment/`.
+- Kept local `docker-compose.yml` and `backend-test` behavior intact.
+
+Scope boundaries preserved:
+
+- No backend readiness dependency code, observability/metrics code, CI
+  workflows, cloud resources, runtime behavior, API behavior, frontend feature
+  behavior, migrations, database models, auto-seeding, or auto-ingestion were
+  added.
 
 ## Current TASK 014.1 Implementation State
 

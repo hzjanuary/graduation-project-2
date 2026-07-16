@@ -86,6 +86,16 @@ RAG_ENABLED=false
 Real LLM provider keys are optional and are only needed if the deployment
 intentionally enables the LLM runtime path and selects a real provider.
 
+Validate the production-demo Compose configuration with:
+
+```bash
+docker-compose -f docker-compose.prod.yml --env-file docs/deployment/.env.production.example config
+```
+
+The production-demo Compose file publishes only the frontend and backend ports
+by default. Postgres, Redis, Qdrant, and MinIO are internal to the Compose
+network.
+
 ## Backend Environment Categories
 
 Application and API:
@@ -105,6 +115,11 @@ Core infrastructure:
 - `MINIO_ACCESS_KEY`
 - `MINIO_SECRET_KEY`
 - `MINIO_BUCKET_NAME`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+- `BACKEND_PUBLIC_PORT`
+- `FRONTEND_PUBLIC_PORT`
 
 Authentication and browser access:
 
@@ -168,8 +183,8 @@ Rules:
 
 - Never commit real secrets, API keys, provider tokens, JWT signing secrets,
   database passwords, object storage secrets, or cloud credentials.
-- Use placeholders such as `${SET_IN_DEPLOYMENT_ENV}` or
-  `change-me-in-production` in committed examples.
+- Use non-working placeholders such as `change-me-in-production` in committed
+  examples.
 - Inject production-demo secrets through the deployment environment, not source
   control.
 - Keep local demo credentials and demo users local-demo only.

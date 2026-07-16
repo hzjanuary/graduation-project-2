@@ -38,6 +38,11 @@ browser by design.
 Deployment environment profiles and production-demo public URL templates are
 documented in `../docs/deployment/ENVIRONMENT.md`.
 
+The production-demo frontend image is built by `Dockerfile` and the additive
+Compose stack in `../docker-compose.prod.yml`. `NEXT_PUBLIC_API_BASE_URL` and
+`NEXT_PUBLIC_WS_BASE_URL` are passed during image build and also documented as
+runtime public values; do not place secrets in them.
+
 ## Install
 
 ```bash

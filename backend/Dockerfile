@@ -24,8 +24,13 @@ FROM base AS runtime
 
 RUN poetry install --only main --no-root
 
-COPY app ./app
+RUN groupadd --system app && \
+    useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app
+
+COPY --chown=app:app app ./app
 RUN rm -rf app/tests
+
+USER app
 
 EXPOSE 8000
 
