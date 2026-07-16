@@ -430,8 +430,9 @@ Treat it as non-blocking if the frontend test command exits successfully.
 
 - Real LLM provider behavior is optional local experimentation only; the
   board-stable demo defaults to deterministic runtime mode.
-- Runtime RAG grounding is backend-only and disabled by default. Frontend
-  citation display is not wired yet.
+- Runtime RAG grounding is disabled by default. When enabled and demo knowledge
+  has been ingested, the workflow detail evidence panel can display bounded
+  backend-attached citations.
 - No document upload/indexing UI.
 - No admin user-management UI.
 - No production deployment automation.

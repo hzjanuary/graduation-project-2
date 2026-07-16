@@ -484,9 +484,10 @@ the existing `VectorStore` abstraction, and returns bounded
 catalog endpoints return deterministic demo document metadata and bounded
 previews without exposing full unbounded source content.
 
-This slice does not implement runtime RAG grounding, frontend evidence panels,
-migrations, database models, upload UI, real embedding providers, or chat LLM
-calls.
+TASK 013.4 itself did not implement runtime RAG grounding, frontend evidence
+panels, migrations, database models, upload UI, real embedding providers, or
+chat LLM calls. Runtime grounding and frontend citation display are added by
+later SPEC-013 slices below.
 
 TASK 013.5 adds feature-flagged runtime RAG grounding for compliance,
 validation/finance, and approval stages:
@@ -506,7 +507,23 @@ runtime uses `KnowledgeRetrievalService` to attach bounded citation summaries
 to workflow state for compliance, validation, and approval stages, and appends
 safe `knowledge.grounding.*` workflow events. It does not call chat LLM
 providers, expose raw embeddings/vector payloads, change API response shapes,
-or add frontend citation panels.
+or add frontend citation panels directly.
+
+TASK 013.6 adds frontend knowledge surfaces:
+
+```text
+lib/api/knowledge.ts
+components/workflows/workflow-evidence-panel.tsx
+components/knowledge/knowledge-search-panel.tsx
+components/knowledge/knowledge-document-list.tsx
+```
+
+The workflow detail page now shows an honest empty evidence state when no RAG
+citations are attached, bounded citation cards when backend runtime grounding
+has populated workflow state/events, a lightweight knowledge search panel, and
+the deterministic demo document catalog. It does not add upload UI, admin
+document-management UI, fake evidence, fake streamed events, or raw embedding
+display.
 
 ## Workflow State Foundation
 

@@ -19,7 +19,7 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-013 RAG and Document Knowledge Base - TASK 013.6 implemented / pending review
+- SPEC-013 RAG and Document Knowledge Base - TASK 013.7 final review approved / ready to close
 
 ## Current SPEC-013 Planning State
 
@@ -314,6 +314,57 @@ Behavior:
   behavior, workflow API behavior, demo ingestion behavior, migrations, database
   models, upload UI, admin document-management UI, provider-management UI,
   token streaming, agent-thought display, or frontend dependencies.
+
+## TASK 013.7 Final Review State
+
+Status:
+
+- SPEC-013 approved and ready to close.
+
+Evidence:
+
+- Verified knowledge contracts/chunking, fake embedding abstraction, demo
+  ingestion, retrieval/search API, feature-flagged runtime grounding, frontend
+  evidence/search/catalog UI, demo docs, and out-of-scope boundaries.
+- Hardened stale docs that still claimed frontend citation display was not
+  wired after TASK 013.6.
+- Confirmed `.env.example` keeps API-key placeholders empty and RAG/embedding
+  defaults offline-safe.
+- Confirmed no dirty migration/model files and no new upload/admin document UI,
+  provider SDK, tokenizer/OCR/PDF dependency, fake streamed events, global
+  response envelope, real secrets, live external provider calls, or backend
+  startup auto-ingestion.
+
+Validation:
+
+- `docker-compose config` passed.
+- `docker-compose up -d postgres redis qdrant minio` completed.
+- `docker-compose run --rm backend-test alembic upgrade head` passed.
+- `docker-compose build backend-test` passed.
+- `docker-compose run --rm backend-test pytest` passed: 660 passed, 1 skipped.
+- `docker-compose run --rm backend-test ruff check .` passed.
+- `docker-compose run --rm backend-test black --check .` passed.
+- `docker-compose run --rm backend-test mypy app` passed.
+- `python -m app.knowledge.ingest_demo --help` passed.
+- Knowledge ingestion dry-run JSON reported `committed:false`, 5 documents, and
+  5 chunks.
+- Two confirmed knowledge ingestion JSON runs reported `committed:true`, 5
+  documents, 5 chunks, 5 reused objects, and 5 vector upserts.
+- `python -m app.demo.seed --confirm-local-demo --dry-run --json` passed with
+  `committed:false`.
+- Frontend `npm install`, `npm run lint`, `npm run build`, serial
+  `npm run typecheck`, and `npm test` passed: 55 frontend tests.
+- `git diff --check` passed with LF/CRLF warnings only.
+
+Non-blocking notes:
+
+- Existing LangGraph pending deprecation warning remains non-blocking.
+- Existing Starlette TestClient deprecation warning remains non-blocking.
+- Existing Vitest/Vite CJS deprecation warning remains non-blocking.
+- Existing frontend npm audit advisories remain a future dependency
+  maintenance item.
+- Running frontend `build` and `typecheck` in parallel can race over generated
+  `.next/types`; the serial requested gate passes.
 
 ## Current SPEC-012 Planning State
 

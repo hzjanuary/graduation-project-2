@@ -29,9 +29,10 @@ The primary board demo uses RFQ-001:
 - Expected static total: `47628 USD`
 - Runtime stopping point: `WAITING_APPROVAL`
 
-The expected total and contract references are demo seed metadata only in
-SPEC-010. They do not mean real retrieval, pricing, compliance, approval, email,
-LLM, or RAG behavior has been implemented.
+The expected total and contract references were SPEC-010 demo seed metadata
+only. Later specs add approval/resume behavior and optional RAG grounding, but
+these static SPEC-010 fields still are not authoritative pricing, compliance,
+email, or LLM output.
 
 ## Demo User Contract
 
