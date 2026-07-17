@@ -5,8 +5,8 @@ SPEC-014 separates environment configuration into three profiles: `local-demo`,
 reproducible while making production-demo configuration explicit and safe.
 
 This document describes environment profiles for the current Docker Compose
-production-demo, readiness, and observability foundations. CI workflows, secret
-vaults, and cloud resources are not implemented yet.
+production-demo, readiness, observability, and CI quality-gate foundations.
+Secret vaults and cloud resources are not implemented yet.
 
 ## Profiles
 
@@ -59,6 +59,10 @@ CI should use:
 Recommended validation commands remain the spec-level gates, such as
 `docker-compose config`, backend tests/lint/typecheck, frontend
 lint/build/typecheck/tests, demo seed dry-run, and knowledge ingestion dry-run.
+The repository CI workflow and local scripts under `scripts/ci/` run those
+checks with fake/no-key defaults. The scripts do not require real provider
+keys, do not deploy, and only run demo seed/knowledge ingestion in dry-run
+mode.
 
 ### production-demo
 

@@ -795,6 +795,12 @@ The additive production-demo Compose stack is defined at
 It keeps backend runtime packaging separate from the `backend-test` dev target
 and does not auto-run demo seed or knowledge ingestion commands.
 
+Repository CI and local quality-gate scripts are documented in
+`../docs/deployment/README.md` and `../scripts/README.md`. The backend gate runs
+the Docker `backend-test` image, migrations, pytest, Ruff, Black, MyPy, demo
+seed dry-run JSON, and knowledge ingestion dry-run JSON with fake/no-key
+defaults.
+
 The container healthcheck intentionally uses `/health` to avoid cascading
 restarts while dependencies start. Use `/ready` for deployment readiness and
 dependency diagnostics.
@@ -835,6 +841,12 @@ metrics at the network/reverse-proxy layer.
 ## Test And Check
 
 Run the reproducible Python 3.12 Docker quality gate from the repository root:
+
+```bash
+bash scripts/ci/backend-gate.sh
+```
+
+Or run individual backend checks:
 
 ```bash
 docker-compose run --rm backend-test pytest

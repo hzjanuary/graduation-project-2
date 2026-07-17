@@ -2,6 +2,37 @@
 
 This directory contains harness automation tools.
 
+## Project CI And Deployment Smoke Scripts
+
+SPEC-014 adds project validation scripts that mirror the repository CI
+workflow. They use fake/no-key defaults, do not deploy, do not push images, and
+do not require real provider keys or cloud credentials.
+
+```bash
+bash scripts/ci/compose-gate.sh    # Validate local and production-demo Compose config
+bash scripts/ci/backend-gate.sh    # Build backend-test, migrate, test, lint, typecheck, dry-run seed/ingest
+bash scripts/ci/frontend-gate.sh   # Install, lint, build, typecheck, and test frontend serially
+bash scripts/ci/all-gates.sh       # Run all gates plus production-demo app image build and git diff --check
+```
+
+`backend-gate.sh` starts local Compose dependencies but does not remove volumes.
+Set `BACKEND_GATE_CLEANUP=1` to stop Compose services after the gate:
+
+```bash
+BACKEND_GATE_CLEANUP=1 bash scripts/ci/backend-gate.sh
+```
+
+Production-demo smoke checks live in:
+
+```bash
+bash scripts/deployment/smoke-prod-demo.sh
+```
+
+The smoke script checks an already-running stack by default. It checks backend
+`/health`, backend `/live`, and the frontend root page without mutating data.
+Use `--start` to start the production-demo Compose stack first and
+`--include-ready` to check backend `/ready`.
+
 ## Harness CLI
 
 The Rust Harness CLI is the primary interface for the durable layer. Installed

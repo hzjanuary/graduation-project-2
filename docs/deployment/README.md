@@ -84,3 +84,90 @@ This task does not add Prometheus, OpenTelemetry exporters, telemetry vendor
 SDKs, cost dashboards, token streaming, or agent-thought streaming. Protect the
 metrics route with deployment network controls or a reverse proxy in real
 deployments.
+
+## CI Quality Gates
+
+SPEC-014 provides a repository CI workflow at `.github/workflows/ci.yml` and
+matching local scripts under `scripts/ci/`.
+
+The CI gate runs with fake/no-key defaults and does not deploy, push images,
+call real LLM providers, call external SaaS providers, or require cloud
+credentials. It validates:
+
+- local Docker Compose config
+- production-demo Docker Compose config
+- backend-test image build
+- Alembic upgrade
+- backend pytest, Ruff, Black, and MyPy
+- demo seed dry-run JSON
+- knowledge ingestion dry-run JSON
+- frontend install, lint, production build, typecheck, and tests
+- production-demo backend/frontend image build
+- `git diff --check`
+
+Frontend build and typecheck intentionally run serially to avoid races around
+generated `.next/types`.
+
+Run the local gates from the repository root:
+
+```bash
+bash scripts/ci/compose-gate.sh
+bash scripts/ci/backend-gate.sh
+bash scripts/ci/frontend-gate.sh
+bash scripts/ci/all-gates.sh
+```
+
+`backend-gate.sh` starts Postgres, Redis, Qdrant, and MinIO for validation. It
+does not remove volumes and does not clean up services unless explicitly
+requested:
+
+```bash
+BACKEND_GATE_CLEANUP=1 bash scripts/ci/backend-gate.sh
+```
+
+Manual cleanup without deleting volumes:
+
+```bash
+docker-compose down --remove-orphans
+docker-compose -f docker-compose.prod.yml --env-file docs/deployment/.env.production.example down --remove-orphans
+```
+
+## Production-Demo Smoke Script
+
+`scripts/deployment/smoke-prod-demo.sh` checks a running production-demo stack
+using existing endpoints only. By default it does not start services, seed demo
+data, ingest knowledge, call real LLM providers, or mutate application state.
+
+Default checks:
+
+- backend `/health`
+- backend `/live`
+- frontend root page
+
+Run against an already-running stack:
+
+```bash
+bash scripts/deployment/smoke-prod-demo.sh
+```
+
+Start the production-demo Compose stack first:
+
+```bash
+bash scripts/deployment/smoke-prod-demo.sh --start
+```
+
+Include readiness checks when dependencies are expected to be healthy:
+
+```bash
+bash scripts/deployment/smoke-prod-demo.sh --include-ready
+```
+
+The script supports URL and Compose file overrides:
+
+```bash
+BACKEND_BASE_URL=http://localhost:8000 \
+FRONTEND_BASE_URL=http://localhost:3000 \
+COMPOSE_FILE=docker-compose.prod.yml \
+COMPOSE_ENV_FILE=docs/deployment/.env.production.example \
+bash scripts/deployment/smoke-prod-demo.sh --include-ready
+```

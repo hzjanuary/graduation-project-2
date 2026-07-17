@@ -64,11 +64,20 @@ http://localhost:3000
 ## Quality Checks
 
 ```bash
+bash ../scripts/ci/frontend-gate.sh
+```
+
+Or run the frontend checks individually:
+
+```bash
 npm run lint
+npm run build
 npm run typecheck
 npm test
-npm run build
 ```
+
+Run `npm run build` and `npm run typecheck` serially. Running them in parallel
+can race on generated `.next/types`.
 
 ## Current Scope
 

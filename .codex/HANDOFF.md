@@ -19,7 +19,47 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-014 Production Deployment and Observability - TASK 014.4 implemented / pending review
+- SPEC-014 Production Deployment and Observability - TASK 014.5 implemented / pending review
+
+## Current TASK 014.5 Implementation State
+
+Implemented:
+
+- Added `.github/workflows/ci.yml` for repository CI quality gates.
+- Added local CI scripts for Compose validation, backend validation, frontend
+  validation, and full gate execution.
+- Added `scripts/deployment/smoke-prod-demo.sh` for safe production-demo smoke
+  checks against existing `/health`, `/live`, optional `/ready`, and frontend
+  root endpoints.
+- Updated deployment, backend, frontend, root, and scripts documentation with
+  local gate commands, no-key behavior, cleanup behavior, serial frontend
+  build/typecheck guidance, and smoke-script usage.
+
+Scope boundaries preserved:
+
+- No real deployment, image push, cloud resource, Kubernetes/Terraform,
+  secret-vault integration, real secret, real provider key, backend behavior,
+  frontend behavior, runtime behavior, API contract change, migration, database
+  model, production email, global response envelope, startup seed, or startup
+  knowledge ingestion was added.
+
+Validation:
+
+- `git status --short` reviewed.
+- `docker-compose config` passed.
+- `docker-compose -f docker-compose.prod.yml --env-file docs/deployment/.env.production.example config` passed.
+- Git Bash `scripts/ci/compose-gate.sh` passed.
+- Git Bash `scripts/ci/backend-gate.sh` passed with backend-test build,
+  migrations, pytest `685 passed, 1 skipped`, Ruff, Black, MyPy, demo seed
+  dry-run JSON, and knowledge ingestion dry-run JSON.
+- Git Bash `scripts/ci/frontend-gate.sh` passed with npm install/ci, lint,
+  build, typecheck, and `55` frontend tests.
+- Git Bash `scripts/ci/all-gates.sh` passed, including production-demo
+  backend/frontend image build and `git diff --check`.
+- Explicit production-demo backend/frontend image build passed.
+- `git diff --check` and `git diff --cached --check` passed with line-ending
+  warnings only.
+- Git Bash `scripts/deployment/smoke-prod-demo.sh --help` passed.
 
 ## Current TASK 014.4 Implementation State
 
