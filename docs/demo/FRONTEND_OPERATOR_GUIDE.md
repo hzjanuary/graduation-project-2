@@ -16,6 +16,16 @@ Open the frontend and go to:
 The Demo Guide page explains the lifecycle, local-demo accounts, seeded
 workflow choices, optional RAG behavior, and the next action to take.
 
+For live observation of workflows created by an external local demo channel,
+open:
+
+```text
+/agent-monitor
+```
+
+The optional Telegram inbound bridge is documented in
+`docs/demo/TELEGRAM_INBOUND_DEMO.md`.
+
 ## Login Account
 
 Use the Manager account for the main demo:

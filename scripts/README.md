@@ -41,6 +41,25 @@ docs/deployment/SMOKE_CHECKS.md
 docs/deployment/TROUBLESHOOTING.md
 ```
 
+## Local Demo Bridges
+
+The optional Telegram inbound bridge is a local-demo script. It polls Telegram
+with a locally supplied bot token, parses bounded laptop quotation requests,
+creates workflows through existing backend APIs, and can run them to
+`WAITING_APPROVAL` for human approval in the UI.
+
+```bash
+python scripts/demo/telegram_inbound_bridge.py --help
+python scripts/demo/telegram_inbound_bridge.py --dry-run --once
+```
+
+It does not auto-approve, auto-resume, send real email, add backend routes, or
+require real LLM providers. Full setup is documented in:
+
+```text
+docs/demo/TELEGRAM_INBOUND_DEMO.md
+```
+
 ## Final Demo Validation
 
 SPEC-015 adds a final E2E demo validation script for the board-demo lifecycle:

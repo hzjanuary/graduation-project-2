@@ -23,6 +23,57 @@ Current active spec:
 
 - SPEC-015 Final Evaluation, Demo Validation, and Graduation Report Assets - closed / final-graduation-ready
 
+## Current Telegram Inbound Demo Bridge State
+
+Scope:
+
+- Local-demo bridge for receiving Telegram customer text messages and creating
+  procurement workflows through existing backend APIs.
+
+Implemented:
+
+- Added `scripts/demo/telegram_inbound_bridge.py`.
+  - Uses Python standard library only.
+  - Polls Telegram `getUpdates`.
+  - Reads config from environment variables:
+    `TELEGRAM_BOT_TOKEN`, `BACKEND_API_BASE_URL`, `FRONTEND_BASE_URL`,
+    `DEMO_MANAGER_EMAIL`, `DEMO_MANAGER_PASSWORD`, and
+    `TELEGRAM_POLL_INTERVAL_SECONDS`.
+  - Supports `--dry-run`, `--once`, `--allowed-chat-id`, `--auto-run`, and
+    `--no-auto-run`.
+  - Parses deterministic laptop quotation messages such as the board-demo
+    phrase, `50 laptops`, `purchase 20 laptops`, `buy 10 laptops`, and
+    `quote for 5 business laptops`.
+  - Builds the existing backend-compatible workflow create payload shape:
+    `workflow_type`, `domain`, `request`, and `metadata` with Telegram source
+    data under `metadata.tags`/`metadata.attributes`.
+  - Uses existing backend endpoints only:
+    `POST /api/v1/auth/login`, `POST /api/v1/workflows`, and
+    `POST /api/v1/workflows/{workflow_id}/run`.
+  - Auto-run defaults enabled and is expected to stop at `WAITING_APPROVAL`;
+    the script never auto-approves or auto-resumes.
+  - Replies with workflow detail and `/agent-monitor?workflowId=...` links.
+- Added `scripts/demo/test_telegram_inbound_bridge.py` with standard-library
+  parser and payload tests.
+- Added `docs/demo/TELEGRAM_INBOUND_DEMO.md`.
+- Linked the Telegram bridge from `README.md`, `docs/demo/DEMO_RUNBOOK.md`,
+  `docs/demo/FRONTEND_OPERATOR_GUIDE.md`, and `scripts/README.md`.
+
+Scope boundaries preserved:
+
+- No backend code, backend routes, API contracts, database models/migrations,
+  Docker/Compose/CI behavior, real secrets, provider keys, fake evidence,
+  auto-approval, auto-resume, email sending, screenshots, slides, PDF/DOCX,
+  images, or videos were added.
+
+Validation so far:
+
+- `python scripts/demo/telegram_inbound_bridge.py --help` passed.
+- `python scripts/demo/telegram_inbound_bridge.py --dry-run --once` passed
+  without requiring `TELEGRAM_BOT_TOKEN`.
+- `python -m unittest scripts.demo.test_telegram_inbound_bridge` passed:
+  5 tests.
+
 ## Current Runtime Created-Step Bug Fix State
 
 Scope:

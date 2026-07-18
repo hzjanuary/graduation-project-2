@@ -250,6 +250,7 @@ Demo support docs:
 
 - [Demo runbook](docs/demo/DEMO_RUNBOOK.md)
 - [Frontend smoke flow](docs/demo/FRONTEND_SMOKE_FLOW.md)
+- [Telegram inbound local demo](docs/demo/TELEGRAM_INBOUND_DEMO.md)
 - [Final demo script](docs/final/FINAL_DEMO_SCRIPT.md)
 - [Demo timing plan](docs/final/DEMO_TIMING_PLAN.md)
 - [Defense Q&A bank](docs/final/DEFENSE_QA_BANK.md)
