@@ -1,6 +1,6 @@
 # Enterprise Multi-Agent OS Frontend
 
-Next.js dashboard foundation for Enterprise Multi-Agent OS.
+Next.js dashboard for Enterprise Multi-Agent OS.
 
 This frontend currently provides the SPEC-009 foundation: project structure,
 TypeScript, Tailwind CSS, shadcn/ui-compatible conventions, typed backend API
@@ -11,6 +11,9 @@ existing SPEC-008 stream endpoint and a SPEC-012 approval/resume panel backed by
 the existing approval and resume workflow endpoints. SPEC-013 adds read-only
 knowledge search/catalog clients and a workflow evidence panel for bounded RAG
 citations already attached by the backend runtime.
+
+For evaluator onboarding, start with the in-app `/demo` route or the one-page
+operator guide at `../docs/demo/FRONTEND_OPERATOR_GUIDE.md`.
 
 ## Requirements
 

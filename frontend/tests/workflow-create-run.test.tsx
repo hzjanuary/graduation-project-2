@@ -7,6 +7,7 @@ import {
   WorkflowCreateForm,
   WorkflowCreateFormValidationError,
 } from "@/components/workflows/workflow-create-form";
+import { WorkflowNextStepGuide } from "@/components/workflows/workflow-next-step-guide";
 import { WorkflowRunPanel } from "@/components/workflows/workflow-run-panel";
 import { ACCESS_TOKEN_STORAGE_KEY } from "@/lib/auth/session";
 
@@ -156,6 +157,34 @@ describe("workflow create and run actions", () => {
     expect(document.body.textContent).toContain(
       "Workflow cannot run from WAITING_APPROVAL",
     );
+  });
+
+  it("does not encourage rerun after runtime stops at approval", async () => {
+    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, "access-token");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await render(
+      <WorkflowRunPanel
+        workflowId="workflow-1"
+        workflowStatus="WAITING_APPROVAL"
+      />,
+    );
+
+    expect(document.body.textContent).toContain("Run already stopped at approval");
+    expect(document.body.textContent).toContain("Review and approve");
+    expect(document.body.textContent).not.toContain("Run workflow");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["CREATED", "This workflow has not run yet."],
+    ["WAITING_APPROVAL", "Runtime has stopped at the human approval boundary."],
+    ["APPROVED", "Approval is complete; continuation is ready."],
+    ["COMPLETED", "Workflow is complete."],
+  ] as const)("renders next-step guide for %s", async (status, expectedText) => {
+    await render(<WorkflowNextStepGuide status={status} />);
+
+    expect(document.body.textContent).toContain(expectedText);
   });
 });
 

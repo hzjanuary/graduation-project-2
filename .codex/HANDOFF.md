@@ -23,6 +23,77 @@ Current active spec:
 
 - SPEC-015 Final Evaluation, Demo Validation, and Graduation Report Assets - closed / final-graduation-ready
 
+## Current Demo-First Frontend UX Simplification State
+
+Scope:
+
+- Targeted frontend and docs polish so evaluators can start from `/demo`,
+  choose local-demo accounts, select seeded workflows, and understand the
+  run/approval/resume lifecycle without reading multiple docs first.
+
+Implemented:
+
+- Added public `/demo` command center with product explanation, lifecycle map,
+  local-demo account cards, seeded workflow links, and optional RAG guidance.
+- Replaced the stale home page bootstrap copy with final product positioning
+  and a primary Start Demo CTA.
+- Replaced dashboard placeholder content with operator overview cards, seeded
+  workflow links, and quality/evidence script references.
+- Added Demo Guide to the authenticated sidebar navigation.
+- Added local-demo account guidance and a non-submitting Fill Manager helper to
+  `/login`.
+- Added workflow list demo helper panel with direct seeded workflow cards while
+  preserving the API-backed workflow table.
+- Added workflow detail next-step guidance keyed from backend workflow status.
+- Made the run panel status-aware so it only encourages `/run` from CREATED
+  and points WAITING_APPROVAL/APPROVED/terminal states to the correct next
+  review/resume behavior.
+- Clarified approval/resume copy, including that resume does not send real
+  email.
+- Added `docs/demo/FRONTEND_OPERATOR_GUIDE.md` and concise links from demo,
+  frontend, and root docs.
+- Added focused frontend tests for `/demo`, home CTA/stale-copy removal,
+  sidebar Demo Guide, login account helper, dashboard command cards, workflow
+  list helper, next-step status guidance, and non-CREATED run-panel behavior.
+
+Scope boundaries preserved:
+
+- No backend code, API contract, database model/migration, Docker/Compose/CI
+  behavior, fake backend data, fabricated evidence, provider keys, real
+  secrets, screenshots, slides, PDF/DOCX/images/videos, or cloud-production
+  claims were added.
+
+Harness:
+
+- Intake recorded as #122.
+- Story `DEMO-FIRST-UX` added and marked implemented.
+- Trace #137 recorded.
+- Story verify was attempted, but sandboxed Vitest config loading failed with
+  filesystem access denial; the same frontend test command passed with approved
+  escalation.
+
+Validation:
+
+- `git status --short` reviewed.
+- `docker-compose config` passed with the existing non-blocking Docker
+  config-file access warning.
+- `docker-compose -f docker-compose.prod.yml --env-file docs/deployment/.env.production.example config`
+  passed with the same non-blocking Docker warning.
+- `cd frontend && npm install` passed.
+- `cd frontend && npm run lint` passed.
+- `cd frontend && npm run build` passed; `/demo` appears in the generated route
+  table.
+- `cd frontend && npm run typecheck` passed.
+- `cd frontend && npm test` passed with approved escalation: 64 tests passed.
+- `bash scripts/ci/frontend-gate.sh` passed with approved Git Bash escalation:
+  lint, build, typecheck, and 64 tests passed; npm reported existing audit
+  advisories.
+- `bash scripts/final/final-quality-gate.sh --help` passed with approved Git
+  Bash escalation.
+- Optional `bash scripts/ci/compose-gate.sh` passed with approved Git Bash
+  escalation.
+- `git diff --check` passed with LF/CRLF warnings only.
+
 ## Current README Rename Polish State
 
 Implemented:

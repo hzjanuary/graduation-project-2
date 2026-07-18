@@ -36,6 +36,7 @@ describe("dashboard shell", () => {
 
     expect(document.body.textContent).toContain("Workflow dashboard");
     expect(document.body.textContent).toContain("Dashboard");
+    expect(document.body.textContent).toContain("Demo Guide");
     expect(document.body.textContent).toContain("Workflows");
     expect(document.body.textContent).toContain("Create Workflow");
     expect(document.body.textContent).toContain("Runtime Events");

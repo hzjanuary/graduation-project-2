@@ -44,6 +44,7 @@ export function WorkflowApprovalPanel({
   const canResume =
     workflow.status === "APPROVED" || approvalHistory.can_resume === true;
   const isSubmitting = actionState.status === "submitting";
+  const statusCopy = approvalStatusCopy(workflow.status, canResume);
 
   async function submitDecision(decision: ApprovalDecisionType) {
     const validationMessage = approvalValidationMessage(decision, comment);
@@ -116,9 +117,7 @@ export function WorkflowApprovalPanel({
             Human approval and resume
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Submit a human approval decision when the workflow is waiting for
-            approval. After approval, resume runs the bounded post-approval
-            continuation without calling the original run endpoint.
+            {statusCopy}
           </p>
         </div>
         <StatusPill status={workflow.status} />
@@ -168,9 +167,7 @@ export function WorkflowApprovalPanel({
         </div>
       ) : (
         <p className="mt-5 text-sm leading-6 text-muted-foreground">
-          Approval decisions are available only while the workflow is
-          WAITING_APPROVAL. Backend authorization remains the source of truth
-          for who can approve, reject, or request changes.
+          {nonDecisionCopy(workflow.status)}
         </p>
       )}
 
@@ -183,7 +180,7 @@ export function WorkflowApprovalPanel({
               </h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Resume the approved workflow through the email preparation
-                stage. This does not send email.
+                preview stage. This does not send real email.
               </p>
             </div>
             <ApprovalButton
@@ -210,6 +207,38 @@ export function WorkflowApprovalPanel({
       ) : null}
     </section>
   );
+}
+
+function approvalStatusCopy(
+  status: WorkflowState["status"],
+  canResume: boolean,
+): string {
+  if (status === "WAITING_APPROVAL") {
+    return "Human approval required before continuation. Review the workflow state, attached evidence, and timeline before deciding.";
+  }
+  if (status === "APPROVED" || canResume) {
+    return "Resume is now available. It continues the approved workflow without calling /run and does not send real email.";
+  }
+  if (status === "COMPLETED") {
+    return "No more approval or resume actions are available. Review history and timeline evidence.";
+  }
+  if (status === "REJECTED") {
+    return "Rejected workflows are terminal. Review the approval history for the recorded decision.";
+  }
+  return "Approval decisions are available only at WAITING_APPROVAL. Backend authorization remains the source of truth.";
+}
+
+function nonDecisionCopy(status: WorkflowState["status"]): string {
+  if (status === "APPROVED") {
+    return "Approval is complete. Use Resume workflow when continuation is available.";
+  }
+  if (status === "COMPLETED") {
+    return "This workflow is complete. No more approval or resume actions are available.";
+  }
+  if (status === "REJECTED") {
+    return "Rejected workflows are terminal. No resume action is available.";
+  }
+  return "Approval decisions are available only while the workflow is WAITING_APPROVAL. Backend authorization remains the source of truth for who can approve, reject, or request changes.";
 }
 
 function ApprovalButton({

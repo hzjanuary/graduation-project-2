@@ -201,6 +201,7 @@ http://localhost:3000
 Demo credentials and the complete walkthrough are documented in:
 
 - [Demo runbook](docs/demo/DEMO_RUNBOOK.md)
+- [Frontend operator guide](docs/demo/FRONTEND_OPERATOR_GUIDE.md)
 - [Frontend smoke flow](docs/demo/FRONTEND_SMOKE_FLOW.md)
 - [Dataset inventory](docs/demo/DATASET_INVENTORY.md)
 

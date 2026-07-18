@@ -47,6 +47,8 @@ describe("workflow pages", () => {
 
     await render(<WorkflowListView />);
 
+    expect(document.body.textContent).toContain("Demo workflow chooser");
+    expect(document.body.textContent).toContain("Run from CREATED");
     expect(document.body.textContent).toContain("procurement_quotation");
     expect(document.body.textContent).toContain("CREATED");
     expect(document.body.textContent).toContain("View detail");
@@ -103,6 +105,8 @@ describe("workflow pages", () => {
 
     await render(<WorkflowDetailView workflowId="workflow-123" />);
 
+    expect(document.body.textContent).toContain("What should I do next?");
+    expect(document.body.textContent).toContain("This workflow has not run yet.");
     expect(document.body.textContent).toContain("workflow-123");
     expect(document.body.textContent).toContain("Request summary");
     expect(document.body.textContent).toContain("Approval history");

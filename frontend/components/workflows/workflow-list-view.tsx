@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { DemoWorkflowCards } from "@/components/demo/demo-workflow-cards";
 import { WorkflowTable } from "@/components/workflows/workflow-table";
 import { ApiClientError } from "@/lib/api/client";
 import { listWorkflows } from "@/lib/api/workflows";
@@ -65,7 +66,22 @@ export function WorkflowListView() {
     );
   }
 
-  return <WorkflowTable workflows={state.workflows} />;
+  return (
+    <div className="grid gap-6">
+      <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+        <h2 className="text-lg font-semibold">Demo workflow chooser</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          Use the CREATED workflow for the full run, WAITING_APPROVAL for a
+          fast approve/resume demo, APPROVED for resume-only, or COMPLETED for
+          read-only history proof.
+        </p>
+        <div className="mt-5">
+          <DemoWorkflowCards compact />
+        </div>
+      </section>
+      <WorkflowTable workflows={state.workflows} />
+    </div>
+  );
 }
 
 export function workflowErrorMessage(error: unknown): string {

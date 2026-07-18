@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ApiClientError } from "@/lib/api/client";
 import { runWorkflow } from "@/lib/api/workflows";
 import { getAccessToken } from "@/lib/auth/session";
-import type { WorkflowRunResponse } from "@/lib/api/types";
+import type { WorkflowRunResponse, WorkflowState } from "@/lib/api/types";
 
 type RunState =
   | { status: "idle" }
@@ -15,16 +15,23 @@ type RunState =
 
 interface WorkflowRunPanelProps {
   workflowId: string;
+  workflowStatus?: WorkflowState["status"];
   onRunCompleted?: () => Promise<void> | void;
 }
 
 export function WorkflowRunPanel({
   workflowId,
+  workflowStatus = "CREATED",
   onRunCompleted,
 }: WorkflowRunPanelProps) {
   const [runState, setRunState] = useState<RunState>({ status: "idle" });
+  const guidance = runGuidance(workflowStatus);
 
   async function handleRun() {
+    if (!guidance.canRun) {
+      return;
+    }
+
     const token = getAccessToken();
     if (!token) {
       setRunState({
@@ -54,22 +61,26 @@ export function WorkflowRunPanel({
             Runtime action
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight">
-            Run deterministic workflow
+            {guidance.title}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Starts the existing backend runtime and stops at waiting approval.
-            When the event stream is connected, runtime events appear in the
-            timeline below.
+            {guidance.description}
           </p>
         </div>
-        <button
-          className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isRunning}
-          onClick={handleRun}
-          type="button"
-        >
-          {isRunning ? "Running..." : "Run workflow"}
-        </button>
+        {guidance.canRun ? (
+          <button
+            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isRunning}
+            onClick={handleRun}
+            type="button"
+          >
+            {isRunning ? "Running..." : "Run workflow"}
+          </button>
+        ) : (
+          <span className="inline-flex min-h-10 items-center rounded-md border px-4 text-sm font-medium text-muted-foreground">
+            {guidance.actionLabel}
+          </span>
+        )}
       </div>
 
       {runState.status === "success" ? (
@@ -83,6 +94,62 @@ export function WorkflowRunPanel({
       ) : null}
     </section>
   );
+}
+
+function runGuidance(status: WorkflowState["status"]): {
+  title: string;
+  description: string;
+  actionLabel: string;
+  canRun: boolean;
+} {
+  if (status === "CREATED") {
+    return {
+      title: "Run deterministic workflow",
+      description:
+        "Start the existing backend runtime. The expected demo stop is WAITING_APPROVAL, where human review begins.",
+      actionLabel: "Run workflow",
+      canRun: true,
+    };
+  }
+  if (status === "WAITING_APPROVAL") {
+    return {
+      title: "Run already stopped at approval",
+      description:
+        "Do not run this workflow again. Review details and evidence, then submit a human approval decision.",
+      actionLabel: "Review and approve",
+      canRun: false,
+    };
+  }
+  if (status === "APPROVED") {
+    return {
+      title: "Approved workflow is ready to resume",
+      description:
+        "Use Resume workflow in the approval panel. Resume continues after approval and does not call /run.",
+      actionLabel: "Use Resume",
+      canRun: false,
+    };
+  }
+  if (
+    status === "COMPLETED" ||
+    status === "REJECTED" ||
+    status === "FAILED" ||
+    status === "CANCELLED"
+  ) {
+    return {
+      title: "Runtime action unavailable",
+      description:
+        "This workflow is in a terminal state. Review the detail, approval history, evidence, and timeline.",
+      actionLabel: "Terminal state",
+      canRun: false,
+    };
+  }
+  return {
+    title: "Workflow is already in progress",
+    description:
+      "The backend is authoritative for runtime progress. Wait for the next stable status before taking another action.",
+    actionLabel: "In progress",
+    canRun: false,
+  };
 }
 
 function RuntimeResult({ response }: { response: WorkflowRunResponse }) {

@@ -9,6 +9,7 @@ import { WorkflowApprovalPanel } from "@/components/workflows/workflow-approval-
 import { WorkflowDetail } from "@/components/workflows/workflow-detail";
 import { WorkflowEvidencePanel } from "@/components/workflows/workflow-evidence-panel";
 import { WorkflowEventTimeline } from "@/components/workflows/workflow-event-timeline";
+import { WorkflowNextStepGuide } from "@/components/workflows/workflow-next-step-guide";
 import { workflowErrorMessage } from "@/components/workflows/workflow-list-view";
 import { WorkflowRunPanel } from "@/components/workflows/workflow-run-panel";
 import {
@@ -112,8 +113,10 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
 
   return (
     <div className="grid gap-6">
+      <WorkflowNextStepGuide status={state.workflow.status} />
       <WorkflowRunPanel
         workflowId={state.workflow.workflow_id}
+        workflowStatus={state.workflow.status}
         onRunCompleted={refreshWorkflowDetail}
       />
       <WorkflowApprovalPanel
@@ -123,13 +126,22 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
       />
       <WorkflowDetail workflow={state.workflow} />
       <WorkflowEvidencePanel workflow={state.workflow} events={state.events} />
-      <KnowledgeSearchPanel token={state.token} />
-      <KnowledgeDocumentList token={state.token} />
       <WorkflowApprovalHistory history={state.approvalHistory} />
       <WorkflowEventTimeline
         workflowId={state.workflow.workflow_id}
         persistedEvents={state.events}
       />
+      <section className="grid gap-6">
+        <div>
+          <h2 className="text-lg font-semibold">Knowledge tools</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Advanced RAG/search checks use existing knowledge endpoints. These
+            panels do not fabricate evidence for the workflow above.
+          </p>
+        </div>
+        <KnowledgeSearchPanel token={state.token} />
+        <KnowledgeDocumentList token={state.token} />
+      </section>
     </div>
   );
 }

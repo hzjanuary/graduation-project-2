@@ -25,6 +25,9 @@ For the production-demo package, use `docs/deployment/RUNBOOK.md` and
 `docs/deployment/DEMO_PACKAGE.md`. This local demo runbook remains the detailed
 workflow walkthrough and troubleshooting reference.
 
+For the fastest frontend-first orientation, start with
+`docs/demo/FRONTEND_OPERATOR_GUIDE.md` or open `/demo` in the running frontend.
+
 For the board-stable demo, keep LLM runtime mode disabled:
 
 ```text
