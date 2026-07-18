@@ -9,11 +9,18 @@ const WORKFLOW_EVENT_MESSAGE_TYPE = "workflow.event";
 const UNSAFE_PAYLOAD_KEY_PARTS = [
   "_sa_",
   "authorization",
+  "chain_of_thought",
+  "embedding",
   "password",
+  "provider_payload",
+  "prompt",
+  "raw_document",
+  "raw_prompt",
   "request_payload",
   "secret",
   "state_payload",
   "token",
+  "vector",
 ];
 
 export function buildWorkflowEventStreamUrl(

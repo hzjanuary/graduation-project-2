@@ -3,6 +3,7 @@ import { NavLink } from "@/components/navigation/nav-link";
 const navigationItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/demo", label: "Demo Guide" },
+  { href: "/agent-monitor", label: "Agent Monitor" },
   { href: "/workflows", label: "Workflows" },
   { href: "/workflows/new", label: "Create Workflow" },
   { href: "/events", label: "Runtime Events" },
