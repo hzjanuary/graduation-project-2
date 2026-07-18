@@ -21,7 +21,52 @@ Closed specs:
 
 Current active spec:
 
-- SPEC-015 Final Evaluation, Demo Validation, and Graduation Report Assets - TASK 015.7 final closeout review complete / pending review
+- SPEC-015 Final Evaluation, Demo Validation, and Graduation Report Assets - closed / final-graduation-ready
+
+## Current README Rename Polish State
+
+Implemented:
+
+- Rewrote root `README.md` as the public landing page for the renamed
+  `multi-agent-system` repository.
+- Preserved product name `Enterprise Multi-Agent OS` and academic title
+  `Enterprise Procurement Workflow Automation using LangGraph-based
+  Multi-Agent System`.
+- Removed stale root README references to `graduation-project-2`,
+  `Frontend (planned)`, and old in-progress/planned phase status language.
+- Added final status, overview, key features, compact Mermaid architecture,
+  current tech stack, final repository structure, local no-key demo,
+  production-demo Compose, demo workflow, API overview, quality gates, final
+  evaluation/report assets, completed SPEC-001 through SPEC-015 status, and
+  safety/limitations sections.
+
+Scope boundaries preserved:
+
+- Only `README.md` and `.codex/HANDOFF.md` were changed.
+- No backend, frontend, runtime, Docker, Compose, CI, tests, migrations,
+  models, scripts, env templates, provider keys, secrets, cloud resources,
+  screenshots, slides, PDF/DOCX/images/videos, or product behavior were
+  changed.
+
+Validation:
+
+- `git status --short` reviewed.
+- `git grep -n "graduation-project-2" README.md` found no matches.
+- `git grep -n "Frontend (planned)\|In Progress\|Planned" README.md` found no
+  matches.
+- `docker-compose config` passed. Docker emitted a non-blocking warning that
+  `C:\Users\Administrator\.docker\config.json` was access denied in this
+  sandbox.
+- `docker-compose -f docker-compose.prod.yml --env-file docs/deployment/.env.production.example config` passed with the same non-blocking Docker config warning.
+- `bash scripts/final/final-quality-gate.sh --help` passed using Git Bash with
+  approved escalation because the sandboxed Bash shim could not access
+  `dirname`.
+- Optional `bash scripts/ci/compose-gate.sh` passed using Git Bash with
+  approved escalation for the same reason.
+- `git diff --check` passed with LF/CRLF warnings only.
+- Harness intake recorded as #121.
+- Harness story `README-RENAME` marked implemented.
+- Harness trace recorded as #136.
 
 ## Current TASK 015.7 Closeout Review State
 

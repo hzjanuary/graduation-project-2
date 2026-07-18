@@ -1,497 +1,389 @@
-# Enterprise Multi-Agent OS
+# Multi-Agent System
 
-**Academic Title:** Enterprise Procurement Workflow Automation using LangGraph-based Multi-Agent System
+**Enterprise Multi-Agent OS - Procurement Workflow Automation using a LangGraph-based Multi-Agent System**
 
-A state-driven business workflow operating system that automates complex enterprise procurement workflows by coordinating multiple specialized AI Agents, deterministic tools, enterprise knowledge bases, human approvals, and audit trails.
+Academic title: **Enterprise Procurement Workflow Automation using LangGraph-based Multi-Agent System**
 
-This is not a chatbot. It is a **workflow orchestration platform** where AI Agents act as specialized workers inside a controlled enterprise process.
+Enterprise Multi-Agent OS is a final graduation-ready workflow orchestration platform for enterprise procurement. It is not a chatbot. It coordinates specialized workflow stages, deterministic services, human approval, RAG evidence, audit events, and deployment-ready operations inside a controlled business process.
 
----
+## Project Status
 
-## Table of Contents
+- Final graduation-ready project.
+- SPEC-001 through SPEC-015 completed and approved.
+- Deterministic no-key demo supported by default.
+- Optional RAG-enabled demo supported without real LLM keys.
+- Real LLM providers are optional and feature-flagged.
+- Docker Compose local and production-demo stacks are available.
+- Final evaluation, report, demo, diagrams, screenshot checklist, and defense Q&A assets are included.
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [Docker Services](#docker-services)
-- [Backend](#backend)
-- [Workflow Pipeline](#workflow-pipeline)
-- [User Roles](#user-roles)
-- [Implementation Phases](#implementation-phases)
-- [Demo Dataset](#demo-dataset)
-- [API Endpoints](#api-endpoints)
-
----
+This repository does not claim real production cloud deployment, Kubernetes, Terraform, secret vault integration, enterprise SSO, production email sending, production OCR, or zero-downtime deployment.
 
 ## Overview
 
-Enterprise Multi-Agent OS orchestrates a multi-step procurement workflow:
+Enterprise procurement workflows are slow because they cross Sales, Finance, Legal, and Management responsibilities. They require consistent state transitions, evidence, approvals, and audit records before customer-facing output is safe.
 
+Enterprise Multi-Agent OS automates the workflow without giving control to a free-form chat interface. A workflow is created, run through bounded stages, paused for human approval, and resumed only after an authorized final approval decision.
+
+Implemented workflow path:
+
+```text
+Procurement request
+  -> planner
+  -> retrieval
+  -> quotation calculation
+  -> compliance
+  -> validation / finance-risk review
+  -> approval package
+  -> WAITING_APPROVAL
+  -> human approval
+  -> explicit resume
+  -> email preview
+  -> COMPLETED
 ```
-Business Request
-  -> Planner Agent (classify intent and domain)
-  -> Retrieval Agent (fetch contracts, policies, pricing)
-  -> Calculator Agent (deterministic quotation generation)
-  -> Compliance Agent (check against policies and contracts)
-  -> Validation Agent (schema and business rule validation)
-  -> Human Approval (manager review)
-  -> Email Preview Agent (generate customer-facing output)
-  -> Completed Workflow
-```
 
-The platform supports five procurement domains:
+## Key Features
 
-- IT Equipment
-- Office Furniture
-- Facility Maintenance
-- Software Subscription
-- Logistics Equipment
-
----
+- FastAPI backend with typed API contracts.
+- Next.js dashboard for workflow list, detail, create, run, approval/resume, timeline, evidence, and knowledge search/catalog surfaces.
+- JWT authentication and RBAC for Admin, Manager, Sales, Legal, Finance, and Viewer.
+- Async SQLAlchemy and Postgres persistence for users, workflows, events, audit evidence, approval state, and runtime state.
+- LangGraph workflow runtime with deterministic default behavior.
+- `POST /api/v1/workflows/{workflow_id}/run` stops at `WAITING_APPROVAL`.
+- `POST /api/v1/workflows/{workflow_id}/resume` continues only after approval.
+- Human approval history, audit/event trail, duplicate-final-decision protection, and terminal-state guards.
+- Persisted workflow events and WebSocket timeline streaming.
+- LLM provider abstraction for fake, Groq, OpenRouter, Ollama, and Gemini providers.
+- No-key deterministic mode for reproducible academic evaluation.
+- RAG/document knowledge base with deterministic chunking, fake embeddings by default, Qdrant retrieval, and MinIO source object storage.
+- Deterministic demo dataset and explicit demo seed CLI.
+- Explicit knowledge ingestion CLI for optional RAG evidence demos.
+- Docker Compose local development stack and production-demo stack.
+- Health, liveness, readiness, structured JSON logs, request IDs, redaction, and protected bounded metrics.
+- GitHub Actions CI, local quality gates, and final release quality gate script.
+- Final evaluation, report, diagram, screenshot, demo script, release checklist, and defense Q&A assets.
 
 ## Architecture
 
-```
-NextJS Dashboard
-    |
-FastAPI API Gateway
-    |
-LangGraph Workflow Runtime
-    |
-Specialized Agent Layer
-    |
-+-- PostgreSQL (business data)
-+-- Redis (runtime state, cache)
-+-- Qdrant (vector search)
-+-- MinIO (object storage)
-+-- LLM Providers (Groq, OpenRouter, Ollama, Gemini)
+```mermaid
+flowchart LR
+  User[Admin / Manager / Sales / Legal / Finance / Viewer]
+  Frontend[Next.js Dashboard]
+  API[FastAPI API Layer]
+  Auth[Auth / RBAC]
+  Workflow[Workflow Services]
+  Runtime[LangGraph Runtime]
+  Approval[Approval Service]
+  Knowledge[Knowledge / RAG Service]
+  LLM[LLM Service Abstraction]
+  Postgres[(Postgres)]
+  Redis[(Redis)]
+  Qdrant[(Qdrant)]
+  MinIO[(MinIO)]
+  Providers[Optional LLM Providers]
+  Docs[Final Evaluation / Report Assets]
+
+  User --> Frontend
+  Frontend --> API
+  API --> Auth
+  API --> Workflow
+  API --> Approval
+  API --> Knowledge
+  Workflow --> Runtime
+  Runtime --> Approval
+  Runtime --> Knowledge
+  Runtime --> LLM
+  LLM -. feature flagged .-> Providers
+  Workflow --> Postgres
+  Approval --> Postgres
+  Runtime --> Postgres
+  Runtime --> Redis
+  Knowledge --> Qdrant
+  Knowledge --> MinIO
+  Frontend --> Docs
 ```
 
-**Design principles:**
-- Clean Architecture with async-first backend
-- State-driven orchestration with explicit human-in-the-loop control
-- Tool-based Agent execution (Agents do not own workflow state)
-- Every Agent has one responsibility and returns structured Pydantic output
-- Deterministic calculation (LLM never performs arithmetic directly)
-- All outputs carry citations and metadata
+More architecture detail:
 
----
+- [Report diagram index](docs/report/diagrams/README.md)
+- [Architecture and design narrative](docs/report/ARCHITECTURE_AND_DESIGN.md)
+- [Project architecture contract](.ai/project/ARCHITECTURE.md)
 
 ## Tech Stack
 
-| Layer | Technology |
+| Area | Stack |
 |---|---|
-| Backend | Python 3.12, FastAPI, Uvicorn, Pydantic v2 |
-| Database | PostgreSQL 16 (asyncpg), SQLAlchemy 2, Alembic |
-| Cache | Redis 7 |
-| Vector Store | Qdrant |
-| Object Storage | MinIO |
-| Workflow Engine | LangGraph |
-| LLM Providers | Groq, OpenRouter, Ollama, Gemini |
-| Auth | JWT (PyJWT), Argon2 password hashing |
-| Code Quality | Ruff, Black, MyPy, Pytest |
-| Logging | Structlog |
-| Infrastructure | Docker, Docker Compose |
-| Frontend (planned) | NextJS, TypeScript, Tailwind CSS, shadcn/ui |
+| Backend | Python 3.12, FastAPI, Pydantic v2, async SQLAlchemy, Alembic |
+| Runtime | LangGraph |
+| Frontend | Next.js, TypeScript, Tailwind CSS, shadcn/ui-compatible component structure |
+| Storage | Postgres, Redis, Qdrant, MinIO |
+| Auth | JWT, Argon2 password hashing, RBAC |
+| LLM | fake, Groq, OpenRouter, Ollama, Gemini |
+| RAG | deterministic chunking, fake embeddings by default, Qdrant retrieval, MinIO document storage |
+| Observability | structured JSON logs, request IDs, readiness checks, redaction, in-process metrics |
+| DevOps | Docker, Docker Compose, GitHub Actions, Bash gate scripts |
+| Quality | pytest, Ruff, Black, MyPy, npm lint/build/typecheck/test |
 
----
+## Repository Structure
 
-## Project Structure
-
-```
+```text
 .
-├── .ai/                          # AI development assets
-│   ├── project/                  # Project contracts and architecture docs
-│   │   ├── PROJECT_CONTRACT.md
-│   │   ├── ARCHITECTURE.md
-│   │   ├── TECH_STACK.md
-│   │   ├── CODING_STANDARD.md
-│   │   ├── FOLDER_STRUCTURE.md
-│   │   ├── STATE_CONTRACT.md
-│   │   ├── AGENT_CONTRACT.md
-│   │   ├── API_CONTRACT.md
-│   │   └── DATABASE_CONTRACT.md
-│   ├── prompts/                  # Agent system prompts
-│   ├── specs/                    # SPEC files (29 specs across 6 phases)
-│   └── templates/                # Spec, task, ADR, PR templates
-├── backend/                      # FastAPI backend
-│   ├── app/
-│   │   ├── api/v1/               # API routes
-│   │   ├── auth/                 # JWT, RBAC, password utilities
-│   │   ├── cache/                # Redis cache provider
-│   │   ├── config/               # Settings (pydantic-settings)
-│   │   ├── core/                 # Logging, utilities
-│   │   ├── db/                   # SQLAlchemy session, base, mixins
-│   │   ├── exceptions/           # Exception handlers
-│   │   ├── middleware/            # Request ID, logging middleware
-│   │   ├── models/               # SQLAlchemy models
-│   │   ├── repositories/         # Generic CRUD repository
-│   │   ├── schemas/              # Pydantic request/response schemas
-│   │   ├── services/             # Business logic layer
-│   │   ├── storage/              # MinIO object storage provider
-│   │   ├── tests/                # Pytest test suite
-│   │   ├── vectorstore/          # Qdrant vector store provider
-│   │   └── workflows/            # Workflow state, lifecycle, events
-│   ├── alembic/                  # Database migrations
-│   ├── Dockerfile
-│   ├── pyproject.toml
-│   └── .env.example
-├── datasets/                     # Demo data for MVP
-│   ├── customers.csv / .json
-│   ├── products.csv / .json
-│   ├── pricing_rules.csv / .json
-│   ├── contracts/                # Contract documents
-│   ├── policies/                 # Policy documents
-│   ├── rfqs/                     # Sample RFQ requests
-│   ├── expected_outputs/         # Expected quotation outputs
-│   └── index/                    # Document index
-├── docs/                         # Harness and project documentation
-├── scripts/                      # Schema SQL, CLI tools
-├── docker-compose.yml
-├── SPEC.md                       # Full product specification
-└── AGENTS.md                     # Agent operating guide
+|-- backend/                    # FastAPI backend, runtime, APIs, services, tests
+|-- frontend/                   # Next.js dashboard and frontend tests
+|-- docs/demo/                  # Local demo runbook, smoke flow, dataset inventory
+|-- docs/deployment/            # Env guide, production-demo runbook, smoke, troubleshooting
+|-- docs/final/                 # Final evaluation, demo validation, release checklist
+|-- docs/report/                # Graduation report narrative assets
+|-- docs/report/diagrams/       # Mermaid architecture diagram sources
+|-- docs/llm/                   # LLM provider and no-key local demo docs
+|-- scripts/ci/                 # Compose, backend, frontend, and all-gates scripts
+|-- scripts/deployment/         # Production-demo smoke script
+|-- scripts/final/              # Final E2E and final quality gate scripts
+|-- .github/workflows/ci.yml    # Repository CI workflow
+|-- .ai/specs/                  # SPEC-001 through SPEC-015 planning assets
+|-- docker-compose.yml          # Local development Compose stack
+|-- docker-compose.prod.yml     # Production-demo Compose stack
+|-- SPEC.md                     # Product specification
+|-- AGENTS.md                   # Agent operating guide
 ```
 
----
+## Quick Start - Local Deterministic Demo
 
-## Getting Started
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Python 3.12 (for local development)
-- Poetry (Python package manager)
-
-### Quick Start with Docker
+Clone the renamed repository:
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd graduation-project-2
-
-# Start all services
-docker-compose up --build
-
-# Verify the backend is running
-curl http://localhost:8000/health
+git clone https://github.com/hzjanuary/multi-agent-system.git
+cd multi-agent-system
 ```
 
-### Local Development Setup
+Default no-key mode:
+
+```text
+LLM_PROVIDER=fake
+LLM_RUNTIME_ENABLED=false
+EMBEDDING_PROVIDER=fake
+RAG_ENABLED=false
+```
+
+Start infrastructure and prepare demo data:
 
 ```bash
-# Navigate to backend
-cd backend
-
-# Install dependencies
-poetry install
-
-# Copy environment file
-cp .env.example .env
-
-# Start infrastructure services only
 docker-compose up -d postgres redis qdrant minio
-
-# Run database migrations
 docker-compose run --rm backend-test alembic upgrade head
-
-# Start the backend
-poetry run uvicorn app.main:app --reload
+docker-compose run --rm backend-test python -m app.demo.seed --confirm-local-demo
 ```
 
-The API documentation is available at `http://127.0.0.1:8000/docs`.
-
-### Running Tests
+Optional RAG-enabled no-key demo:
 
 ```bash
-# Via Docker (reproducible environment)
-docker-compose run --rm backend-test pytest
-docker-compose run --rm backend-test ruff check .
-docker-compose run --rm backend-test black --check .
-docker-compose run --rm backend-test mypy app
-
-# Or locally
-cd backend
-poetry run pytest
-poetry run ruff check .
-poetry run black --check .
-poetry run mypy app
+docker-compose run --rm backend-test python -m app.knowledge.ingest_demo --confirm-local-demo
 ```
 
----
-
-## Environment Variables
-
-| Variable | Description | Default |
-|---|---|---|
-| `APP_ENV` | Environment mode | `development` |
-| `DEBUG` | Debug mode | `true` |
-| `LOG_FORMAT` | Backend log renderer (`json` or `text`) | `json` |
-| `LOG_REDACTION_ENABLED` | Masks secrets and raw payloads in operational logs | `true` |
-| `METRICS_ENABLED` | Enables bounded in-process backend metrics | `true` |
-| `METRICS_ROUTE_ENABLED` | Enables authenticated metrics endpoint | `true` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql+asyncpg://postgres:postgres@localhost:5432/enterprise_os` |
-| `REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
-| `QDRANT_URL` | Qdrant URL | `http://localhost:6333` |
-| `MINIO_ENDPOINT` | MinIO endpoint | `localhost:9000` |
-| `MINIO_ACCESS_KEY` | MinIO access key | |
-| `MINIO_SECRET_KEY` | MinIO secret key | |
-| `MINIO_BUCKET_NAME` | MinIO bucket | `enterprise-multi-agent-os` |
-| `JWT_SECRET_KEY` | JWT signing secret | (development default) |
-| `JWT_ALGORITHM` | JWT algorithm | `HS256` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token TTL | `30` |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token TTL | `7` |
-| `LLM_PROVIDER` | Active LLM provider | `fake` |
-| `LLM_RUNTIME_ENABLED` | Enables LLM-assisted runtime path | `false` |
-| `LLM_TIMEOUT_SECONDS` | LLM provider timeout | `30` |
-| `LLM_MAX_RETRIES` | LLM retry count for transient errors | `2` |
-| `LLM_FALLBACK_ENABLED` | Enables transient-error fallback | `false` |
-| `LLM_FALLBACK_PROVIDER` | Fallback provider | `fake` |
-| `LLM_MODEL` | Global LLM model fallback | |
-| `GROQ_API_KEY` | Groq API key | |
-| `GROQ_MODEL` | Groq model override | |
-| `OPENROUTER_API_KEY` | OpenRouter API key | |
-| `OPENROUTER_MODEL` | OpenRouter model override | |
-| `GEMINI_API_KEY` | Gemini API key | |
-| `GEMINI_MODEL` | Gemini model override | |
-| `OLLAMA_BASE_URL` | Ollama base URL | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Ollama model override | |
-
-See `backend/.env.example` for the full list. Never commit real secrets.
-Deployment environment profiles and production-demo templates are documented in
-`docs/deployment/ENVIRONMENT.md`.
-Production-demo Compose usage is documented in `docs/deployment/README.md`.
-CI quality gates and the production-demo smoke script are also documented in
-`docs/deployment/README.md` and can be run locally with:
+Start the backend:
 
 ```bash
-bash scripts/ci/all-gates.sh
-bash scripts/deployment/smoke-prod-demo.sh
+docker-compose up --build backend
 ```
 
-LLM provider setup and local demo guidance are documented in:
+Start the frontend in another terminal:
 
-- `docs/llm/PROVIDER_SETUP.md`
-- `docs/llm/LOCAL_LLM_DEMO.md`
-
----
-
-## Docker Services
-
-| Service | Port | Description |
-|---|---|---|
-| `backend` | 8000 | FastAPI API server |
-| `postgres` | 5432 | PostgreSQL 16 database |
-| `redis` | 6379 | Redis 7 cache |
-| `qdrant` | 6333 | Qdrant vector database |
-| `minio` | 9000 (API), 9001 (console) | MinIO object storage |
-
----
-
-## Backend
-
-### Health Endpoints
-
-```
-GET /       Service metadata and endpoint links
-GET /health Overall application health
-GET /ready  Dependency readiness check
-GET /live   Liveness status
-GET /api/v1/observability/metrics  Admin/Manager operational metrics
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-### Authentication
+Open the frontend:
 
-```
-POST /api/v1/auth/login    Login with email and password
-POST /api/v1/auth/refresh  Refresh token pair
-POST /api/v1/auth/logout   Logout (stateless MVP)
-GET  /api/v1/auth/me       Current user profile
+```text
+http://localhost:3000
 ```
 
-Passwords are hashed with Argon2. Tokens use JWT with configurable expiry.
+Demo credentials and the complete walkthrough are documented in:
 
-### RBAC Roles
+- [Demo runbook](docs/demo/DEMO_RUNBOOK.md)
+- [Frontend smoke flow](docs/demo/FRONTEND_SMOKE_FLOW.md)
+- [Dataset inventory](docs/demo/DATASET_INVENTORY.md)
 
-- **Admin** — Full system access
-- **Manager** — Approve/reject workflows
-- **Sales** — Create and track workflows
-- **Legal** — Manage policies and compliance
-- **Finance** — Manage pricing and calculations
-- **Viewer** — Read-only access
+Demo credentials are local-demo/board-demo only. Do not reuse them for production.
 
-### Storage Providers
+## Production-Demo Compose
 
-- **Cache** — `app/cache/` with Redis implementation
-- **Vector Store** — `app/vectorstore/` with Qdrant implementation
-- **Object Storage** — `app/storage/` with MinIO implementation
+The production-demo stack packages frontend, backend, Postgres, Redis, Qdrant, and MinIO through Docker Compose. It is designed for a board-ready demo deployment path, not a cloud production claim.
 
-All providers follow an interface-first design. Each has a provider contract and a concrete implementation.
+Key files:
 
----
+- Env template: [docs/deployment/.env.production.example](docs/deployment/.env.production.example)
+- Compose file: [docker-compose.prod.yml](docker-compose.prod.yml)
+- Runbook: [docs/deployment/RUNBOOK.md](docs/deployment/RUNBOOK.md)
+- Smoke checks: [docs/deployment/SMOKE_CHECKS.md](docs/deployment/SMOKE_CHECKS.md)
+- Troubleshooting: [docs/deployment/TROUBLESHOOTING.md](docs/deployment/TROUBLESHOOTING.md)
 
-## Workflow Pipeline
+Validate and build the production-demo stack:
 
-### Workflow Statuses
-
-```
-CREATED -> PLANNING -> RETRIEVING -> CALCULATING -> CHECKING_COMPLIANCE
-  -> VALIDATING -> WAITING_APPROVAL -> APPROVED -> GENERATING_EMAIL -> COMPLETED
+```bash
+docker-compose -f docker-compose.prod.yml --env-file docs/deployment/.env.production.example config
+docker-compose -f docker-compose.prod.yml --env-file docs/deployment/.env.production.example build backend frontend
+bash scripts/deployment/smoke-prod-demo.sh --help
 ```
 
-Failure paths: `FAILED`, `CANCELLED`, `REJECTED`
+Production-demo limitations are intentional: no Kubernetes, Terraform, cloud deployment automation, secret vault, zero-downtime deployment, production backup automation, or production email sending is included.
 
-### Agents
+## Demo Workflow
 
-| Agent | Responsibility |
-|---|---|
-| Planner Agent | Classify intent, identify procurement domain, create execution plan |
-| Retrieval Agent | Fetch contracts, policies, pricing data with citations |
-| Calculator Agent | Deterministic quotation calculation (no LLM arithmetic) |
-| Compliance Agent | Check quotation against policies, contracts, and domain rules |
-| Validation Agent | Validate schemas, required fields, calculation consistency |
-| Email Agent | Generate professional email preview (requires approval) |
+The board-demo flow is:
 
----
+1. Login as Manager/Admin using documented local-demo credentials.
+2. Open the workflows dashboard.
+3. Open a procurement workflow.
+4. Run the workflow.
+5. Verify status reaches `WAITING_APPROVAL`.
+6. Inspect persisted events and live timeline.
+7. Optionally inspect RAG evidence/citations and knowledge search/catalog after enabling RAG and ingesting knowledge docs.
+8. Submit approval.
+9. View approval history.
+10. Resume the workflow.
+11. Verify status reaches `COMPLETED`.
+12. Optionally check `/ready` and protected metrics.
 
-## User Roles
+Demo support docs:
 
-| Role | Capabilities |
-|---|---|
-| Admin | Manage users, roles, system config, master data, audit logs |
-| Sales | Create workflows, upload RFQs, track progress, review outputs |
-| Manager | View pending approvals, approve/reject workflows |
-| Legal | Upload policies, review compliance reports, add legal comments |
-| Finance | Upload pricing, manage tax/discount rules, review calculations |
-| Viewer | View workflows, details, and analytics (read-only) |
+- [Demo runbook](docs/demo/DEMO_RUNBOOK.md)
+- [Frontend smoke flow](docs/demo/FRONTEND_SMOKE_FLOW.md)
+- [Final demo script](docs/final/FINAL_DEMO_SCRIPT.md)
+- [Demo timing plan](docs/final/DEMO_TIMING_PLAN.md)
+- [Defense Q&A bank](docs/final/DEFENSE_QA_BANK.md)
 
----
+## API Overview
 
-## Implementation Phases
+Implemented endpoint groups:
 
-| Phase | Scope | Status |
-|---|---|---|
-| Sprint -1 | AI Development Framework (.ai project files, datasets) | Done |
-| Phase 1 | Infrastructure (Auth, DB, Storage providers) | In Progress |
-| Phase 2 | Core Workflow Engine (State, LangGraph, APIs, Events) | Planned |
-| Phase 3 | Agent Implementation (Planner, Retrieval, Calculator, Compliance, Validation, Email) | Planned |
-| Phase 4 | Frontend (NextJS dashboard, Auth UI, Agent Monitor, Approval Center) | Planned |
-| Phase 5 | Observability, Analytics, Demo | Planned |
-| Phase 6 | Deployment, CI/CD, Final Documentation | Planned |
+- Root/service metadata: `GET /`
+- Health and operations: `GET /health`, `GET /live`, `GET /ready`
+- Auth: login, refresh, logout, current user
+- Workflows: create, list, detail, metadata
+- Workflow run: `POST /api/v1/workflows/{workflow_id}/run`
+- Approval: `POST /api/v1/workflows/{workflow_id}/approval`
+- Approval history: `GET /api/v1/workflows/{workflow_id}/approval/history`
+- Resume: `POST /api/v1/workflows/{workflow_id}/resume`
+- Workflow events: `GET /api/v1/workflows/{workflow_id}/events`
+- Workflow event stream: `WS /api/v1/workflows/{workflow_id}/stream`
+- Knowledge: document list/detail and search
+- Observability: `GET /api/v1/observability/metrics` for Admin/Manager
 
-### Demo Acceptance Criteria
+Deferred endpoint areas:
 
-The MVP is successful when:
-
-1. Sales user creates a workflow from the demo RFQ
-2. Planner identifies domain as IT equipment
-3. Retrieval finds contract `CON-2026-ACME-IT` and applies 10% discount
-4. Calculator produces grand total of **47,628 USD**
-5. Compliance returns PASS or LOW risk
-6. Validation confirms output validity
-7. Manager approves the workflow
-8. Email Agent generates the email preview
-9. Workflow status becomes COMPLETED
-
----
-
-## Demo Dataset
-
-Located in `datasets/`. Includes:
-
-- Customers (CSV/JSON)
-- Products (CSV/JSON)
-- Pricing rules (CSV/JSON)
-- Contracts (markdown)
-- Policies (markdown)
-- Sample RFQs
-- Expected outputs
-- Document index
-
-### Recommended Demo Order
-
-1. RFQ-001: IT equipment (simple, easy to explain)
-2. RFQ-004: Software subscription (VAT 0, seat-based pricing)
-3. RFQ-005: Logistics equipment (multi-item quotation)
-4. RFQ-003: Facility maintenance (compliance/SLA logic)
-5. RFQ-002: Office furniture (multi-item, installation policy)
-
-### Local Demo Runbook
-
-The current board-ready local demo flow is documented in:
-
-- `docs/demo/DEMO_RUNBOOK.md`
-- `docs/demo/FRONTEND_SMOKE_FLOW.md`
-- `docs/llm/LOCAL_LLM_DEMO.md`
-
-Use the runbook for Docker startup, migrations, deterministic demo seeding,
-local-demo credentials, frontend walkthrough checkpoints, and troubleshooting.
-
-Production-demo packaging and operator docs are documented in:
-
-- `docs/deployment/RUNBOOK.md`
-- `docs/deployment/DEMO_PACKAGE.md`
-- `docs/deployment/SMOKE_CHECKS.md`
-- `docs/deployment/TROUBLESHOOTING.md`
-- `docs/deployment/BACKUP_RESTORE.md`
-
-Those docs use the Docker Compose production-demo stack and preserve the
-default no-key demo mode.
-
-Final graduation evaluation planning is documented in:
-
-- `docs/final/README.md`
-- `docs/final/EVALUATION_MATRIX.md`
-- `docs/final/ACCEPTANCE_EVIDENCE_PLAN.md`
-- `docs/final/FINAL_DEMO_SCRIPT.md`
-- `docs/final/DEFENSE_QA_BANK.md`
-- `docs/final/RELEASE_CHECKLIST.md`
-- `docs/final/FINAL_QUALITY_GATE.md`
-- `docs/report/README.md`
-- `docs/report/diagrams/README.md`
-
----
-
-## API Endpoints
-
-### Auth
-
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/refresh`
-- `POST /api/v1/auth/logout`
-- `GET /api/v1/auth/me`
-
-### Workflows
-
-- `POST /api/v1/workflows`
-- `GET /api/v1/workflows`
-- `GET /api/v1/workflows/{workflow_id}`
-- `POST /api/v1/workflows/{workflow_id}/transition`
-- `PATCH /api/v1/workflows/{workflow_id}/state`
-- `GET /api/v1/workflows/{workflow_id}/events`
-- `POST /api/v1/workflows/{workflow_id}/run`
-- `POST /api/v1/workflows/{workflow_id}/approval`
-- `GET /api/v1/workflows/{workflow_id}/approval/history`
-- `POST /api/v1/workflows/{workflow_id}/resume`
-- `GET /api/v1/workflows/_meta`
-
-### Events
-
-- `WS /api/v1/workflows/{workflow_id}/stream`
-
-### Deferred Endpoints
-
-The following product-contract capabilities are not implemented yet:
-
-- workflow cancellation route
 - approval center routes
+- workflow cancellation route
+- provider-management/admin key-management UI
 - real LLM token streaming endpoints
-- provider-management or admin key-management endpoints
+- upload/admin document management API
 
----
+## Quality Gates
+
+Run the local quality gates from the repository root:
+
+```bash
+bash scripts/ci/compose-gate.sh
+bash scripts/ci/backend-gate.sh
+bash scripts/ci/frontend-gate.sh
+bash scripts/ci/all-gates.sh
+bash scripts/final/final-quality-gate.sh
+```
+
+Gate behavior:
+
+- Backend gate builds `backend-test`, runs Alembic migration check, pytest, Ruff, Black, MyPy, demo seed dry-run JSON, and knowledge ingestion dry-run JSON.
+- Frontend gate runs install, lint, production build, typecheck, and tests serially.
+- Final quality gate is non-deploying and non-mutating by default.
+- Full mutating E2E validation requires explicit `--confirm-local-demo`.
+
+Final E2E validation script:
+
+```bash
+bash scripts/final/e2e-demo-validation.sh --help
+bash scripts/final/e2e-demo-validation.sh --confirm-local-demo --include-ready
+```
+
+## Final Evaluation And Graduation Assets
+
+Final evidence and submission docs:
+
+- [Final docs index](docs/final/README.md)
+- [Evaluation matrix](docs/final/EVALUATION_MATRIX.md)
+- [Acceptance evidence plan](docs/final/ACCEPTANCE_EVIDENCE_PLAN.md)
+- [E2E demo validation](docs/final/E2E_DEMO_VALIDATION.md)
+- [Screenshot checklist](docs/final/SCREENSHOT_CHECKLIST.md)
+- [Final demo script](docs/final/FINAL_DEMO_SCRIPT.md)
+- [Defense Q&A bank](docs/final/DEFENSE_QA_BANK.md)
+- [Release checklist](docs/final/RELEASE_CHECKLIST.md)
+- [Final quality gate](docs/final/FINAL_QUALITY_GATE.md)
+- [Report assets](docs/report/README.md)
+- [Architecture diagrams](docs/report/diagrams/README.md)
+
+## Implementation Status
+
+SPEC-001 through SPEC-015 are completed and approved.
+
+Major completed areas:
+
+- backend foundation
+- database foundation
+- authentication and RBAC
+- storage infrastructure
+- workflow state
+- LangGraph runtime
+- workflow APIs
+- event streaming
+- frontend dashboard
+- demo dataset and seed CLI
+- LLM provider abstraction
+- human approval and resume
+- RAG document knowledge base
+- production-demo deployment and observability
+- final evaluation, report, demo, diagram, screenshot, release, and Q&A assets
+
+## Safety And Limitations
+
+Safety boundaries:
+
+- Default demo does not require real LLM keys.
+- Real LLM providers are optional and feature-flagged.
+- Env templates use placeholders; do not commit real secrets.
+- Demo credentials are local-demo/board-demo only.
+- Do not use real customer data in demo or final evidence.
+- Do not expose raw prompts, provider payloads, embeddings, vector payloads, tokens, cookies, API keys, or chain-of-thought.
+- Metrics are protected and documented as operational data.
+- Demo seed and knowledge ingestion are explicit commands; they do not run on application startup.
+
+Deferred capabilities:
+
+- cloud deployment automation
+- Kubernetes/Terraform
+- production secret vault
+- enterprise SSO
+- production email sending
+- production OCR/PDF parsing
+- upload/admin document management UI
+- provider-management UI
+- production backup automation
+- zero-downtime deployment
+- token streaming
+- agent-thought streaming
+- multi-tenant isolation
+- billing/cost dashboard
+
+## Documentation Entry Points
+
+- [Backend README](backend/README.md)
+- [Frontend README](frontend/README.md)
+- [Scripts README](scripts/README.md)
+- [Demo runbook](docs/demo/DEMO_RUNBOOK.md)
+- [Deployment docs](docs/deployment/README.md)
+- [LLM provider setup](docs/llm/PROVIDER_SETUP.md)
+- [Local LLM/no-key demo](docs/llm/LOCAL_LLM_DEMO.md)
+- [Final release notes](docs/final/FINAL_RELEASE_NOTES.md)
+- [Graduation report outline](docs/report/REPORT_OUTLINE.md)
 
 ## License
 
-This project is an academic graduation project.
+This repository is an academic graduation project.
