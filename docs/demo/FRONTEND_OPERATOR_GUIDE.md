@@ -26,6 +26,12 @@ open:
 The optional Telegram inbound bridge is documented in
 `docs/demo/TELEGRAM_INBOUND_DEMO.md`.
 
+The `/demo` command center also includes a **Telegram Live Demo** section with
+the exact phone message, local bridge command, Agent Monitor link, and safety
+notes. Use it when you want to show a customer request arriving from Telegram,
+being converted into a workflow, running to `WAITING_APPROVAL`, and then being
+approved/resumed through the normal frontend UI.
+
 ## Login Account
 
 Use the Manager account for the main demo:

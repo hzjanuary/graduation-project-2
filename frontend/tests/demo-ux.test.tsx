@@ -35,6 +35,30 @@ describe("demo-first frontend UX", () => {
       "dc5e7963-c2a4-5ad6-8f70-0741431597f0",
     );
     expect(document.body.textContent).toContain("RAG is off by default");
+    expect(document.body.textContent).toContain("Telegram Live Demo");
+    expect(document.body.textContent).toContain("Phone message");
+    expect(document.body.textContent).toContain("Telegram bridge");
+    expect(document.body.textContent).toContain("Create workflow");
+    expect(document.body.textContent).toContain("/run");
+    expect(document.body.textContent).toContain(
+      "We would like to purchase 50 standard business laptops",
+    );
+    expect(document.body.textContent).toContain(
+      "TELEGRAM_BOT_TOKEN=... python",
+    );
+    expect(document.body.textContent).toContain(
+      "scripts/demo/telegram_inbound_bridge.py",
+    );
+    expect(document.body.textContent).toContain(
+      "docs/demo/TELEGRAM_INBOUND_DEMO.md",
+    );
+    expect(document.body.textContent).toContain(
+      "The bridge does not auto-approve or auto-resume.",
+    );
+    expect(document.body.textContent).toContain("No real email is sent.");
+    expect(
+      document.querySelector('a[href="/agent-monitor"]')?.textContent,
+    ).toContain("Open Agent Monitor");
     expect(
       document.querySelector('a[href="/login"]')?.textContent,
     ).toContain("Go to Login");
