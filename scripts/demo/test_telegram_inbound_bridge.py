@@ -6,6 +6,8 @@ from scripts.demo.telegram_inbound_bridge import (
     BridgeConfig,
     EXAMPLE_MESSAGE,
     LLMExtractionError,
+    ParsedCustomerRequest,
+    UnsupportedMixedRequest,
     WorkflowCreationResult,
     build_workflow_create_payload,
     config_from_env,
@@ -19,10 +21,31 @@ from scripts.demo.telegram_inbound_bridge import (
     sender_display_name,
     telegram_run_failed_reply,
     telegram_workflow_reply,
+    unsupported_mixed_item_message,
 )
 
 
 class TelegramInboundBridgeParserTests(unittest.TestCase):
+    def config(self, *, sales: bool = False, llm: bool = False) -> BridgeConfig:
+        return BridgeConfig(
+            telegram_bot_token=None,
+            backend_api_base_url="http://localhost:8000/api/v1",
+            frontend_base_url="http://localhost:3000",
+            manager_email="manager@example.test",
+            manager_password="DemoPassword123!",
+            poll_interval_seconds=2.0,
+            allowed_chat_id=None,
+            dry_run=True,
+            once=True,
+            auto_run=True,
+            llm_extraction_enabled=llm,
+            llm_provider="ollama",
+            llm_model="qwen2.5:7b-instruct-q4_K_M",
+            llm_base_url="http://localhost:11434",
+            llm_timeout_seconds=30,
+            sales_replies_enabled=sales,
+        )
+
     def test_board_demo_phrase_parses_quantity_and_laptops(self) -> None:
         parsed = parse_customer_request(EXAMPLE_MESSAGE)
 
@@ -208,6 +231,109 @@ class TelegramInboundBridgeParserTests(unittest.TestCase):
         self.assertIn("Parsed: 50 x Standard business laptop", reply)
         self.assertIn("Options: Office 365", reply)
         self.assertIn("Human approval is required before resume", reply)
+
+    def test_mixed_laptop_and_printer_request_does_not_create_workflow(self) -> None:
+        parsed = extract_customer_request(
+            "báo giá 20 cái laptop và 5 cái máy in hp",
+            self.config(),
+        )
+
+        self.assertIsInstance(parsed, UnsupportedMixedRequest)
+        assert isinstance(parsed, UnsupportedMixedRequest)
+        self.assertIsNotNone(parsed.supported)
+        assert parsed.supported is not None
+        self.assertEqual(parsed.supported.quantity, 20)
+        self.assertEqual(parsed.supported.item_name, "Standard business laptop")
+        self.assertEqual(parsed.unsupported_summary, "5 x máy in HP")
+
+    def test_technical_mixed_item_reply_mentions_supported_and_unsupported(self) -> None:
+        parsed = extract_customer_request(
+            "báo giá 20 cái laptop và 5 cái máy in hp",
+            self.config(),
+        )
+        assert isinstance(parsed, UnsupportedMixedRequest)
+
+        reply = unsupported_mixed_item_message(self.config(), parsed)
+
+        self.assertIn("Supported: 20 x Standard business laptop", reply)
+        self.assertIn("Unsupported: 5 x máy in HP", reply)
+        self.assertIn("Please send a request with supported items only", reply)
+        self.assertIn("laptop quotation only", reply)
+
+    def test_sales_mixed_item_reply_is_customer_friendly(self) -> None:
+        parsed = extract_customer_request(
+            "báo giá 20 cái laptop và 5 cái máy in hp",
+            self.config(sales=True),
+        )
+        assert isinstance(parsed, UnsupportedMixedRequest)
+
+        reply = unsupported_mixed_item_message(self.config(sales=True), parsed)
+
+        self.assertIn("Em đã nhận được yêu cầu gồm 20 x laptop", reply)
+        self.assertIn("5 x máy in HP", reply)
+        self.assertIn("demo chỉ hỗ trợ xử lý báo giá laptop", reply)
+        self.assertIn("chưa tạo báo giá để tránh thiếu thông tin", reply)
+        self.assertIn("báo giá 20 laptop văn phòng tiêu chuẩn", reply)
+
+    def test_llm_laptop_only_result_is_blocked_when_original_mentions_printer(self) -> None:
+        llm_only_laptop = ParsedCustomerRequest(
+            original_text="báo giá 20 cái laptop và 5 cái máy in hp",
+            quantity=20,
+            item_name="Standard business laptop",
+            language="vi",
+            extraction_mode="llm",
+            llm_provider="ollama",
+            llm_model="qwen2.5:7b-instruct-q4_K_M",
+        )
+
+        parsed = extract_customer_request(
+            "báo giá 20 cái laptop và 5 cái máy in hp",
+            self.config(llm=True),
+            llm_extractor=lambda _text, _config: llm_only_laptop,
+        )
+
+        self.assertIsInstance(parsed, UnsupportedMixedRequest)
+        assert isinstance(parsed, UnsupportedMixedRequest)
+        self.assertEqual(parsed.supported_summary, "20 x Standard business laptop")
+        self.assertEqual(parsed.unsupported_summary, "5 x máy in HP")
+
+    def test_laptop_only_vietnamese_request_still_creates_request(self) -> None:
+        parsed = extract_customer_request("báo giá 20 laptop", self.config())
+
+        self.assertIsInstance(parsed, ParsedCustomerRequest)
+        assert isinstance(parsed, ParsedCustomerRequest)
+        self.assertEqual(parsed.quantity, 20)
+        self.assertEqual(parsed.item_name, "Standard business laptop")
+
+    def test_laptop_with_office_still_creates_request(self) -> None:
+        parsed = extract_customer_request(
+            "tôi muốn mua 50 cái máy tính xách tay doanh nhân tiêu chuẩn có cài sẵn office 365",
+            self.config(),
+        )
+
+        self.assertIsInstance(parsed, ParsedCustomerRequest)
+        assert isinstance(parsed, ParsedCustomerRequest)
+        self.assertEqual(parsed.quantity, 50)
+        self.assertEqual(parsed.requested_addons, ("office_365",))
+
+    def test_greeting_and_missing_quantity_remain_followups(self) -> None:
+        self.assertTrue(is_greeting_message("xin chào"))
+        self.assertIsNone(extract_customer_request("xin chào", self.config()))
+        self.assertIsNone(extract_customer_request("tôi muốn mua laptop", self.config()))
+
+    def test_mixed_item_reply_does_not_expose_raw_llm_or_provider_payload(self) -> None:
+        parsed = extract_customer_request(
+            "báo giá 20 cái laptop và 5 cái máy in hp",
+            self.config(sales=True),
+        )
+        assert isinstance(parsed, UnsupportedMixedRequest)
+
+        reply = unsupported_mixed_item_message(self.config(sales=True), parsed).lower()
+
+        self.assertNotIn("prompt", reply)
+        self.assertNotIn("provider_payload", reply)
+        self.assertNotIn("raw_response", reply)
+        self.assertNotIn("traceback", reply)
 
     def test_sender_display_name_uses_safe_telegram_profile_fields(self) -> None:
         self.assertEqual(

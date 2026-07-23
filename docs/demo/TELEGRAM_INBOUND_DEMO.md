@@ -229,6 +229,19 @@ If a quantity is present but the item is unsupported, the bridge still refuses
 to create a workflow silently. Ask the customer actor to use a supported laptop
 phrase such as `laptop` or `máy tính xách tay`.
 
+If a message mixes a supported laptop request with an unsupported item, the
+bridge also refuses to create a partial workflow. For example:
+
+```text
+báo giá 20 cái laptop và 5 cái máy in hp
+```
+
+The bridge recognizes `20 x Standard business laptop`, detects `5 x máy in HP`
+as unsupported, and replies with a clarification instead of dropping the printer
+line. The current local demo catalog supports laptop quotations only. Send a
+laptop-only RFQ or add catalog/pricing support before demonstrating other
+products.
+
 ## Optional LLM Extraction
 
 The bridge can optionally ask a local Ollama model to extract a more natural

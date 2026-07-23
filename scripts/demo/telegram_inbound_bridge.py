@@ -90,6 +90,34 @@ class ParsedCustomerRequest:
 
 
 @dataclass(frozen=True)
+class UnsupportedItemMention:
+    quantity: int | None
+    item_label: str
+    display_label: str
+
+    @property
+    def summary(self) -> str:
+        quantity = f"{self.quantity} x " if self.quantity is not None else ""
+        return f"{quantity}{self.display_label}"
+
+
+@dataclass(frozen=True)
+class UnsupportedMixedRequest:
+    original_text: str
+    language: str
+    supported: ParsedCustomerRequest | None
+    unsupported_items: tuple[UnsupportedItemMention, ...]
+
+    @property
+    def supported_summary(self) -> str:
+        return self.supported.summary if self.supported else "none"
+
+    @property
+    def unsupported_summary(self) -> str:
+        return ", ".join(item.summary for item in self.unsupported_items)
+
+
+@dataclass(frozen=True)
 class WorkflowCreationResult:
     workflow_id: str
     status: str
@@ -306,6 +334,9 @@ def handle_update(config: BridgeConfig, update: dict[str, Any]) -> None:
         return
 
     parsed = extract_customer_request(text, config)
+    if isinstance(parsed, UnsupportedMixedRequest):
+        send_or_log_reply(config, chat_id, unsupported_mixed_item_message(config, parsed))
+        return
     if parsed is None:
         send_or_log_reply(config, chat_id, follow_up_message(config, text))
         return
@@ -432,10 +463,49 @@ def extract_customer_request(
     config: BridgeConfig,
     *,
     llm_extractor: Any | None = None,
-) -> ParsedCustomerRequest | None:
+) -> ParsedCustomerRequest | UnsupportedMixedRequest | None:
     """Extract a customer RFQ with optional LLM parsing and deterministic fallback."""
+    def apply_unsupported_item_guard(
+        parsed: ParsedCustomerRequest | None,
+        *,
+        extraction_mode: str | None = None,
+    ) -> ParsedCustomerRequest | UnsupportedMixedRequest | None:
+        normalized = re.sub(r"\s+", " ", text.strip())[:MAX_TEXT_LENGTH]
+        unsupported_items = detect_unsupported_item_mentions(text)
+        if unsupported_items and parsed is not None:
+            guarded_parsed = (
+                parsed_with_extraction_metadata(
+                    parsed,
+                    extraction_mode=extraction_mode,
+                    llm_provider=config.llm_provider,
+                    llm_model=config.llm_model,
+                )
+                if parsed is not None and extraction_mode is not None
+                else parsed
+            )
+            return UnsupportedMixedRequest(
+                original_text=normalized,
+                language=(
+                    guarded_parsed.language
+                    if guarded_parsed is not None
+                    else detect_language(normalized, normalize_for_matching(normalized))
+                ),
+                supported=guarded_parsed,
+                unsupported_items=unsupported_items,
+            )
+        if parsed is None:
+            return None
+        if extraction_mode is None:
+            return parsed
+        return parsed_with_extraction_metadata(
+            parsed,
+            extraction_mode=extraction_mode,
+            llm_provider=config.llm_provider,
+            llm_model=config.llm_model,
+        )
+
     if not config.llm_extraction_enabled:
-        return parse_customer_request(text)
+        return apply_unsupported_item_guard(parse_customer_request(text))
 
     extractor = llm_extractor or llm_extract_customer_request
     try:
@@ -443,17 +513,10 @@ def extract_customer_request(
     except LLMExtractionError:
         llm_parsed = None
     if llm_parsed is not None:
-        return llm_parsed
+        return apply_unsupported_item_guard(llm_parsed)
 
     deterministic = parse_customer_request(text)
-    if deterministic is None:
-        return None
-    return parsed_with_extraction_metadata(
-        deterministic,
-        extraction_mode="fallback",
-        llm_provider=config.llm_provider,
-        llm_model=config.llm_model,
-    )
+    return apply_unsupported_item_guard(deterministic, extraction_mode="fallback")
 
 
 def llm_extract_customer_request(
@@ -709,6 +772,39 @@ def detect_requested_addons(searchable_text: str) -> tuple[str, ...]:
     if any(re.search(pattern, searchable_text) for pattern in addon_patterns):
         return ("office_365",)
     return ()
+
+
+def detect_unsupported_item_mentions(text: str) -> tuple[UnsupportedItemMention, ...]:
+    searchable = normalize_for_matching(text)
+    unsupported: list[UnsupportedItemMention] = []
+    printer_match = re.search(
+        r"(?:\b(\d{1,5})\s+(?:cai|chiec|may|pcs?|units?)?\s*)?"
+        r"\b("
+        r"may\s+in(?:\s+hp)?"
+        r"|hp\s+printers?"
+        r"|printers?"
+        r")\b",
+        searchable,
+    )
+    if printer_match:
+        quantity = int(printer_match.group(1)) if printer_match.group(1) else None
+        unsupported.append(
+            UnsupportedItemMention(
+                quantity=quantity,
+                item_label="printer",
+                display_label=unsupported_printer_display_label(printer_match.group(2)),
+            )
+        )
+    return tuple(unsupported)
+
+
+def unsupported_printer_display_label(raw_value: str) -> str:
+    normalized = normalize_for_matching(raw_value)
+    if "hp" in normalized:
+        return "máy in HP"
+    if "may in" in normalized:
+        return "máy in"
+    return "printer"
 
 
 def addon_display_label(addon: str) -> str:
@@ -1065,6 +1161,47 @@ def follow_up_message(config: BridgeConfig, text: str) -> str:
     if config.sales_replies_enabled:
         return sales_follow_up_message(text)
     return HELPFUL_REQUEST_PROMPT
+
+
+def unsupported_mixed_item_message(
+    config: BridgeConfig,
+    request: UnsupportedMixedRequest,
+) -> str:
+    if config.sales_replies_enabled:
+        return sales_unsupported_mixed_item_message(request)
+    return technical_unsupported_mixed_item_message(request)
+
+
+def technical_unsupported_mixed_item_message(request: UnsupportedMixedRequest) -> str:
+    return (
+        "I found a supported item and an unsupported item. "
+        f"Supported: {request.supported_summary}. "
+        f"Unsupported: {request.unsupported_summary}. "
+        "Please send a request with supported items only. The current demo "
+        "catalog supports laptop quotation only."
+    )
+
+
+def sales_unsupported_mixed_item_message(request: UnsupportedMixedRequest) -> str:
+    if request.language == "vi":
+        supported = request.supported_summary.replace(
+            "Standard business laptop",
+            "laptop",
+        )
+        return (
+            f"Em đã nhận được yêu cầu gồm {supported} và "
+            f"{request.unsupported_summary}. Hiện demo chỉ hỗ trợ xử lý báo giá "
+            "laptop. Mặt hàng máy in HP chưa có trong catalog demo, nên em chưa "
+            "tạo báo giá để tránh thiếu thông tin. Anh/chị có thể gửi riêng yêu "
+            "cầu laptop, ví dụ: báo giá 20 laptop văn phòng tiêu chuẩn."
+        )
+    return (
+        f"I found a supported laptop request ({request.supported_summary}) and "
+        f"an unsupported item ({request.unsupported_summary}). The current demo "
+        "catalog supports laptop quotation only, so I have not created a partial "
+        "workflow. Please send a laptop-only RFQ or add product catalog/pricing "
+        "first."
+    )
 
 
 def sales_greeting_message(text: str) -> str:
