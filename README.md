@@ -203,6 +203,7 @@ Demo credentials and the complete walkthrough are documented in:
 - [Demo runbook](docs/demo/DEMO_RUNBOOK.md)
 - [Frontend operator guide](docs/demo/FRONTEND_OPERATOR_GUIDE.md)
 - [Frontend smoke flow](docs/demo/FRONTEND_SMOKE_FLOW.md)
+- [Final live demo runbook](docs/demo/FINAL_LIVE_DEMO_RUNBOOK.md)
 - [Dataset inventory](docs/demo/DATASET_INVENTORY.md)
 
 Demo credentials are local-demo/board-demo only. Do not reuse them for production.

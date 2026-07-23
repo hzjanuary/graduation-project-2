@@ -1,0 +1,14 @@
+# Safe local override example.
+#
+# Copy to docker-compose.override.yml for local experiments only. The real
+# override file is ignored by Git because it may contain machine-specific
+# settings. Do not place Telegram tokens, provider API keys, or production
+# secrets in this example file.
+
+services:
+  backend:
+    environment:
+      LLM_PROVIDER: fake
+      LLM_RUNTIME_ENABLED: "false"
+      OLLAMA_BASE_URL: "http://host.docker.internal:11434"
+      OLLAMA_MODEL: "qwen2.5:7b-instruct-q4_K_M"

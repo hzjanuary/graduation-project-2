@@ -23,6 +23,53 @@ Current active spec:
 
 - SPEC-015 Final Evaluation, Demo Validation, and Graduation Report Assets - closed / final-graduation-ready
 
+## Current Final Live Demo Freeze State
+
+Scope:
+
+- Documentation and repository hygiene only for the successful live defense
+  path.
+- No backend behavior, frontend behavior, Telegram bridge behavior,
+  Docker/Compose runtime behavior, CI behavior, database migrations, API
+  contracts, RAG/web search, price lookup, auto-approval, auto-resume, or real
+  email behavior changed.
+
+Implemented:
+
+- Added `docs/demo/FINAL_LIVE_DEMO_RUNBOOK.md` as the frozen live defense
+  runbook.
+- Added safe `docker-compose.override.example.yml` with fake backend runtime
+  defaults and host Ollama placeholders only.
+- Cleaned `.gitignore` and ensured `docker-compose.override.yml` is ignored and
+  not tracked.
+- Cross-linked the final live runbook from `README.md`,
+  `docs/demo/TELEGRAM_INBOUND_DEMO.md`, and
+  `docs/demo/FRONTEND_OPERATOR_GUIDE.md`.
+
+Frozen demo path:
+
+- Backend stays deterministic with `LLM_PROVIDER=fake` and
+  `LLM_RUNTIME_ENABLED=false`.
+- Optional local Ollama extraction is used only by the Telegram bridge through
+  `TELEGRAM_LLM_EXTRACTION_ENABLED=true`,
+  `TELEGRAM_LLM_BASE_URL=http://localhost:11434`, and
+  `TELEGRAM_LLM_MODEL=qwen2.5:7b-instruct-q4_K_M`.
+- Telegram bridge uses sales-style replies with
+  `TELEGRAM_SALES_REPLY_ENABLED=true` or `--sales-replies`.
+- Greeting returns help and creates no workflow.
+- Mixed laptop/printer request creates no workflow and returns an unsupported
+  item clarification.
+- Laptop-only Vietnamese RFQ with Office 365 creates a workflow, auto-runs to
+  `WAITING_APPROVAL`, and returns workflow plus Agent Monitor links.
+- Manager approval and explicit resume complete the workflow; no real email is
+  sent.
+
+Safety:
+
+- No Telegram token, provider API key, local override config, real customer
+  data, final price claim, stock promise, delivery promise, auto-approval,
+  auto-resume, or real email claim is added.
+
 ## Current Telegram Inbound Demo Bridge State
 
 Scope:

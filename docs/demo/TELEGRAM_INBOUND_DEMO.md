@@ -11,6 +11,12 @@ procurement workflow through the existing backend API, optionally runs it to
 This is a local demo bridge. It is not a production Telegram webhook
 integration.
 
+For the final frozen defense path, use
+`docs/demo/FINAL_LIVE_DEMO_RUNBOOK.md`. It documents deterministic backend
+mode, optional local Ollama extraction for Telegram only, sales-style replies,
+the mixed unsupported item guard, approval/resume, and the live troubleshooting
+checklist.
+
 ## Why Polling
 
 Polling with Telegram `getUpdates` keeps the demo local and avoids public

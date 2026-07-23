@@ -28,8 +28,9 @@ workflow walkthrough and troubleshooting reference.
 For the fastest frontend-first orientation, start with
 `docs/demo/FRONTEND_OPERATOR_GUIDE.md` or open `/demo` in the running frontend.
 
-For the optional phone-to-workflow local demo, use
-`docs/demo/TELEGRAM_INBOUND_DEMO.md`. It polls Telegram locally, creates a
+For the final frozen phone-to-workflow defense path, use
+`docs/demo/FINAL_LIVE_DEMO_RUNBOOK.md`. The lower-level Telegram bridge guide
+is `docs/demo/TELEGRAM_INBOUND_DEMO.md`. It polls Telegram locally, creates a
 workflow through existing backend APIs, and lets evaluators watch progress in
 `/agent-monitor`.
 

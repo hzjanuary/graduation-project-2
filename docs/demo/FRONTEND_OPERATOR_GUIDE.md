@@ -26,6 +26,12 @@ open:
 The optional Telegram inbound bridge is documented in
 `docs/demo/TELEGRAM_INBOUND_DEMO.md`.
 
+For the final live defense path, use
+`docs/demo/FINAL_LIVE_DEMO_RUNBOOK.md`. It freezes the successful
+phone-to-workflow scenario, including optional Ollama extraction in the bridge, sales
+replies, unsupported mixed-item safety, Agent Monitor observation, Manager
+approval, and resume to `COMPLETED`.
+
 For a more customer-facing live demo, start the bridge with
 `--sales-replies`. This changes only Telegram reply wording. It does not create
 prices, approve workflows, resume workflows, or send real email.
