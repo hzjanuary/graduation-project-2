@@ -32,9 +32,9 @@ export function WorkflowEvidencePanel({
   const groups = groupByStage(citations);
 
   return (
-    <section className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
+    <section className="ops-panel p-5">
       <div>
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="ops-kicker">
           Retrieved evidence
         </p>
         <h2 className="mt-1 text-lg font-semibold">Evidence and citations</h2>
@@ -92,7 +92,7 @@ function CitationCard({ citation }: { citation: WorkflowEvidenceCitation }) {
   const location = citationLocation(citation);
 
   return (
-    <article className="rounded-md border bg-background p-4">
+    <article className="rounded-md border border-border/70 bg-background/55 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="break-words text-sm font-semibold">
@@ -102,7 +102,7 @@ function CitationCard({ citation }: { citation: WorkflowEvidenceCitation }) {
             {citation.source_type} / {citation.citation_label}
           </p>
         </div>
-        <span className="inline-flex w-fit rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+        <span className="ops-chip">
           Score {formatScore(citation.relevance_score)}
         </span>
       </div>

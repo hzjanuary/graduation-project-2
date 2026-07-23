@@ -107,10 +107,10 @@ export function WorkflowApprovalPanel({
   }
 
   return (
-    <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <section className="ops-panel p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="ops-kicker">
             Approval workflow
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight">
@@ -128,7 +128,7 @@ export function WorkflowApprovalPanel({
           <label className="grid gap-2 text-sm font-medium">
             Approval comment
             <textarea
-              className="min-h-28 resize-y rounded-md border bg-background p-3 text-sm font-normal leading-6 outline-none focus:ring-2 focus:ring-ring"
+              className="ops-input min-h-28 resize-y p-3 font-normal leading-6"
               maxLength={MAX_APPROVAL_COMMENT_LENGTH}
               name="approvalComment"
               onChange={(event) => setComment(event.target.value)}
@@ -172,7 +172,7 @@ export function WorkflowApprovalPanel({
       )}
 
       {canResume ? (
-        <div className="mt-5 rounded-md border bg-muted/40 p-4">
+        <div className="ops-panel-muted mt-5 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-sm font-semibold">
@@ -195,7 +195,7 @@ export function WorkflowApprovalPanel({
       ) : null}
 
       {actionState.status === "success" ? (
-        <div className="mt-5 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-700">
+        <div className="mt-5 rounded-md border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200">
           {actionState.message}
         </div>
       ) : null}
@@ -258,10 +258,10 @@ function ApprovalButton({
 }) {
   const className =
     variant === "danger"
-      ? "inline-flex h-10 items-center justify-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-60"
+      ? "inline-flex h-10 items-center justify-center rounded-md bg-destructive px-4 text-sm font-semibold text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-60"
       : variant === "secondary"
-        ? "inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-        : "inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60";
+        ? "ops-button-secondary"
+        : "ops-button-primary";
 
   return (
     <button
@@ -277,7 +277,7 @@ function ApprovalButton({
 
 function StatusPill({ status }: { status: WorkflowState["status"] }) {
   return (
-    <span className="inline-flex h-9 items-center rounded-full border px-3 text-xs font-medium text-muted-foreground">
+    <span className="ops-chip min-h-9">
       {status}
     </span>
   );

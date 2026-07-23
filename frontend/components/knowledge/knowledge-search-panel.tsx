@@ -45,9 +45,9 @@ export function KnowledgeSearchPanel({ token }: KnowledgeSearchPanelProps) {
   }
 
   return (
-    <section className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
+    <section className="ops-panel p-5">
       <div>
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="ops-kicker">
           Knowledge search
         </p>
         <h2 className="mt-1 text-lg font-semibold">Search demo knowledge</h2>
@@ -61,7 +61,7 @@ export function KnowledgeSearchPanel({ token }: KnowledgeSearchPanelProps) {
         <label className="grid gap-2 text-sm font-medium">
           Query
           <input
-            className="h-10 rounded-md border bg-background px-3 text-sm font-normal outline-none focus:ring-2 focus:ring-ring"
+            className="ops-input h-10 font-normal"
             maxLength={2000}
             onChange={(event) => setQuery(event.target.value)}
             value={query}
@@ -70,7 +70,7 @@ export function KnowledgeSearchPanel({ token }: KnowledgeSearchPanelProps) {
         <label className="grid gap-2 text-sm font-medium">
           Top K
           <input
-            className="h-10 rounded-md border bg-background px-3 text-sm font-normal outline-none focus:ring-2 focus:ring-ring"
+            className="ops-input h-10 font-normal"
             max={20}
             min={1}
             onChange={(event) => setTopK(Number(event.target.value))}
@@ -79,7 +79,7 @@ export function KnowledgeSearchPanel({ token }: KnowledgeSearchPanelProps) {
           />
         </label>
         <button
-          className="mt-auto inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          className="ops-button-primary mt-auto"
           disabled={state.status === "loading"}
           onClick={() => void submitSearch()}
           type="button"
@@ -114,7 +114,7 @@ export function KnowledgeSearchPanel({ token }: KnowledgeSearchPanelProps) {
 
 function SearchResultItem({ result }: { result: KnowledgeRetrievalResult }) {
   return (
-    <li className="rounded-md border bg-background p-4">
+    <li className="rounded-md border border-border/70 bg-background/55 p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="break-words text-sm font-semibold">
@@ -124,7 +124,7 @@ function SearchResultItem({ result }: { result: KnowledgeRetrievalResult }) {
             {result.source_type} / {result.citation.citation_label}
           </p>
         </div>
-        <span className="inline-flex w-fit rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+        <span className="ops-chip">
           Score {Math.round(result.score * 100)}%
         </span>
       </div>

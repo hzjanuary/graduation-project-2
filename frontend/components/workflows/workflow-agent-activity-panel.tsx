@@ -137,10 +137,10 @@ export function WorkflowAgentActivityPanel({
   );
 
   return (
-    <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <section className="ops-panel p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="ops-kicker">
             Agent activity
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight">
@@ -153,7 +153,7 @@ export function WorkflowAgentActivityPanel({
             payloads, or embeddings.
           </p>
         </div>
-        <span className="inline-flex w-fit rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground">
+        <span className="ops-chip">
           {workflow.status}
         </span>
       </div>
@@ -183,7 +183,7 @@ export function deriveWorkflowAgentActivities(
 
 function AgentActivityCard({ activity }: { activity: AgentActivity }) {
   return (
-    <article className="grid gap-4 rounded-md border bg-muted/30 p-4">
+    <article className="grid gap-4 rounded-lg border border-border/70 bg-background/55 p-4 shadow-[0_0_0_1px_hsl(var(--primary)/0.04)_inset]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-base font-semibold">{activity.name}</h3>
@@ -214,7 +214,7 @@ function AgentActivityCard({ activity }: { activity: AgentActivity }) {
         </div>
       </div>
       {activity.details ? (
-        <details className="rounded-md border bg-background p-3">
+        <details className="ops-panel-muted p-3">
           <summary className="cursor-pointer text-sm font-medium">
             Technical details
           </summary>
@@ -627,15 +627,15 @@ function statusClassName(status: ActivityStatus): string {
     status === "Completed after resume" ||
     status === "Ready to run via Resume"
   ) {
-    return `${base} border-emerald-500/30 bg-emerald-500/10 text-emerald-700`;
+    return `${base} ops-status-completed`;
   }
   if (status === "Waiting for approval") {
-    return `${base} border-amber-500/30 bg-amber-500/10 text-amber-700`;
+    return `${base} ops-status-waiting`;
   }
   if (status === "Blocked until approval" || status === "Rejected") {
-    return `${base} border-destructive/30 bg-destructive/10 text-destructive`;
+    return `${base} ops-status-danger`;
   }
-  return `${base} text-muted-foreground`;
+  return `${base} border-border/70 bg-muted/30 text-muted-foreground`;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

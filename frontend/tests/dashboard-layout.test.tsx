@@ -34,9 +34,9 @@ describe("dashboard shell", () => {
 
     await render(<DashboardPage />);
 
-    expect(document.body.textContent).toContain("Workflow dashboard");
+    expect(document.body.textContent).toContain("Operations dashboard");
     expect(document.body.textContent).toContain("Dashboard");
-    expect(document.body.textContent).toContain("Demo Guide");
+    expect(document.body.textContent).toContain("Demo Command");
     expect(document.body.textContent).toContain("Agent Monitor");
     expect(document.body.textContent).toContain("Workflows");
     expect(document.body.textContent).toContain("Create Workflow");

@@ -19,10 +19,10 @@ export function NavLink({ href, label }: NavLinkProps) {
     <Link
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex min-h-10 items-center rounded-md px-3 text-sm font-medium transition hover:bg-accent hover:text-accent-foreground",
+        "relative flex min-h-10 items-center rounded-md border border-transparent px-3 text-sm font-medium transition",
         isActive
-          ? "bg-accent text-accent-foreground"
-          : "text-muted-foreground",
+          ? "border-primary/30 bg-primary/10 pl-4 text-foreground shadow-[0_0_26px_hsl(var(--primary)/0.16)] before:absolute before:left-0 before:top-2 before:h-6 before:w-0.5 before:rounded-full before:bg-primary"
+          : "text-muted-foreground hover:border-border/70 hover:bg-secondary/50 hover:text-foreground",
       )}
       href={href}
     >

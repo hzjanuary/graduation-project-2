@@ -2,45 +2,40 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-background">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center gap-8 px-6 py-16">
+    <main className="ops-page">
+      <section className="mx-auto grid min-h-screen w-full max-w-7xl gap-10 px-5 py-10 sm:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)] lg:items-center lg:px-8">
         <div className="max-w-4xl">
-          <p className="text-sm font-medium text-muted-foreground">
-            Multi-Agent System
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground md:text-6xl">
-            Enterprise Multi-Agent OS
+          <p className="ops-kicker">Multi-Agent System</p>
+          <h1 className="mt-5 text-5xl font-semibold tracking-tight text-foreground md:text-7xl">
+            Enterprise workflow OS.
           </h1>
-          <p className="mt-5 text-lg leading-8 text-muted-foreground">
-            Procurement workflow automation using a LangGraph-based multi-agent
-            system. This is not a chatbot; it is a controlled workflow
-            orchestration platform with deterministic services, human approval,
-            RAG evidence, audit events, and production-demo operations.
+          <p className="mt-6 max-w-3xl text-base leading-7 text-muted-foreground md:text-lg md:leading-8">
+            Enterprise Multi-Agent OS is not a chatbot. It is a controlled
+            procurement workflow platform where deterministic services,
+            specialized stages, human approval, RAG evidence, audit events, and
+            operational readiness work as one system.
           </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link className="ops-button-primary" href="/demo">
+              Start Demo
+            </Link>
+            <Link className="ops-button-secondary" href="/login">
+              Login
+            </Link>
+            <a className="ops-button-secondary" href="/docs/final/README.md">
+              Final Evaluation Docs
+            </a>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Link
-            className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-95"
-            href="/demo"
-          >
-            Start Demo
-          </Link>
-          <Link
-            className="inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
-            href="/login"
-          >
-            Login
-          </Link>
-          <a
-            className="inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
-            href="/docs/final/README.md"
-          >
-            Final Evaluation Docs
-          </a>
-        </div>
-
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="ops-panel-strong grid gap-4 p-5">
+          <div className="rounded-lg border border-primary/25 bg-primary/10 p-4">
+            <p className="ops-kicker">Defense path</p>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Telegram RFQ - extraction - normalization - workflow run -
+              WAITING_APPROVAL - Manager approval - resume - COMPLETED.
+            </p>
+          </div>
           <InfoCard
             title="Workflow first"
             description="Run a seeded procurement workflow to WAITING_APPROVAL, then approve and resume explicitly."
@@ -61,7 +56,7 @@ export default function HomePage() {
 
 function InfoCard({ title, description }: { title: string; description: string }) {
   return (
-    <article className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
+    <article className="ops-panel-muted p-5">
       <h2 className="text-base font-semibold">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {description}

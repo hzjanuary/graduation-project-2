@@ -127,7 +127,7 @@ function RecentWorkflowMonitor({ workflows }: { workflows: WorkflowState[] }) {
   return (
     <div className="grid gap-6">
       <ObserverModeIntro />
-      <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+      <section className="ops-panel p-6">
         <h2 className="text-lg font-semibold">Seeded demo shortcuts</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Use these stable workflows when you want a predictable board-demo
@@ -148,7 +148,7 @@ function RecentWorkflowMonitor({ workflows }: { workflows: WorkflowState[] }) {
           ))}
         </div>
       </section>
-      <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+      <section className="ops-panel p-6">
         <h2 className="text-lg font-semibold">Recent workflows</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           This list uses the existing workflow API and does not create or modify
@@ -182,10 +182,10 @@ function WorkflowMonitor({
   return (
     <div className="grid gap-6">
       <ObserverModeIntro />
-      <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+      <section className="ops-panel-strong p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">
+            <p className="ops-kicker">
               Observed workflow
             </p>
             <h2 className="mt-2 break-words text-xl font-semibold tracking-tight">
@@ -199,13 +199,13 @@ function WorkflowMonitor({
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
+              className="ops-button-primary"
               href={`/workflows/${workflow.workflow_id}`}
             >
               Open full detail
             </Link>
             <Link
-              className="inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
+              className="ops-button-secondary"
               href={`/workflows/${workflow.workflow_id}`}
             >
               Approve / resume
@@ -241,11 +241,11 @@ function WorkflowMonitor({
 
 function ObserverModeIntro() {
   return (
-    <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
-      <p className="text-sm font-medium text-muted-foreground">
+    <section className="ops-panel-strong p-6">
+      <p className="ops-kicker">
         Live demo observer mode
       </p>
-      <h2 className="mt-2 text-xl font-semibold tracking-tight">
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight">
         Watch workflow agents without reading the full runbook first.
       </h2>
       <div className="mt-4 grid gap-3 text-sm leading-6 text-muted-foreground lg:grid-cols-2">
@@ -282,12 +282,12 @@ function MonitorShortcutCard({
 }) {
   return (
     <Link
-      className="rounded-lg border bg-background p-5 transition hover:border-primary/60 hover:bg-muted/30"
+      className="ops-card-link p-5"
       href={href}
     >
-      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <p className="ops-kicker">{label}</p>
       <h3 className="mt-2 text-base font-semibold">{subtitle}</h3>
-      <p className="mt-2 text-xs font-medium text-primary">{status}</p>
+      <p className="mt-2 inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{status}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{text}</p>
       <p className="mt-3 break-words text-xs leading-5 text-muted-foreground">
         {workflowId}
@@ -299,7 +299,7 @@ function MonitorShortcutCard({
 function RecentWorkflowCard({ workflow }: { workflow: WorkflowState }) {
   return (
     <Link
-      className="rounded-lg border bg-background p-5 transition hover:border-primary/60 hover:bg-muted/30"
+      className="ops-card-link p-5"
       href={`/agent-monitor?workflowId=${workflow.workflow_id}`}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -311,7 +311,7 @@ function RecentWorkflowCard({ workflow }: { workflow: WorkflowState }) {
             {workflow.workflow_type}
           </p>
         </div>
-        <span className="inline-flex w-fit rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground">
+        <span className="ops-chip">
           {workflow.status}
         </span>
       </div>
@@ -325,8 +325,8 @@ function RecentWorkflowCard({ workflow }: { workflow: WorkflowState }) {
 
 function MonitorFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border bg-muted/30 p-3">
-      <p className="text-xs font-medium uppercase text-muted-foreground">
+    <div className="ops-panel-muted p-3">
+      <p className="ops-kicker">
         {label}
       </p>
       <p className="mt-1 break-words text-sm font-semibold">{value}</p>
@@ -342,7 +342,7 @@ function MonitorStatePanel({
   description?: string;
 }) {
   return (
-    <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <div className="ops-panel p-6">
       <h2 className="text-base font-semibold">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {description}

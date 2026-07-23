@@ -137,8 +137,9 @@ export function WorkflowDetailView({ workflowId }: WorkflowDetailViewProps) {
         workflowId={state.workflow.workflow_id}
         persistedEvents={state.events}
       />
-      <section className="grid gap-6">
+      <section className="ops-panel grid gap-6 p-5">
         <div>
+          <p className="ops-kicker">Advanced review</p>
           <h2 className="text-lg font-semibold">Knowledge tools</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Advanced RAG/search checks use existing knowledge endpoints. These
@@ -174,7 +175,7 @@ function DetailStatePanel({
   description?: string;
 }) {
   return (
-    <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <div className="ops-panel p-6">
       <h2 className="text-base font-semibold">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {description}

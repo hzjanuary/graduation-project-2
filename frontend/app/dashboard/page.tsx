@@ -6,16 +6,29 @@ import { AppShell } from "@/components/layout/app-shell";
 export default function DashboardPage() {
   return (
     <AppShell
-      title="Workflow dashboard"
+      title="Operations dashboard"
       description="Operator overview for running the procurement workflow demo."
     >
       <div className="grid gap-6">
+        <section className="ops-panel-strong p-6">
+          <p className="ops-kicker">Operations overview</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+            Use this console to route evaluators into the live demo.
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
+            The stable defense path uses deterministic backend runtime,
+            Agent Monitor observation, Manager approval, and explicit resume.
+            No final price, stock, delivery, auto-approval, auto-resume, or
+            real email is claimed.
+          </p>
+        </section>
+
         <section className="grid gap-4 lg:grid-cols-2">
           <DashboardCard
             title="Start here"
             description="Open the demo command center for local-demo accounts, seeded workflow choices, and the run/approve/resume sequence."
             href="/demo"
-            linkLabel="Open Demo Guide"
+            linkLabel="Open Demo Command"
           />
           <DashboardCard
             title="Workflow lifecycle"
@@ -36,7 +49,7 @@ export default function DashboardPage() {
           <DemoWorkflowCards compact />
         </section>
 
-        <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+        <section className="ops-panel p-6">
           <h2 className="text-lg font-semibold">Quality and evidence</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Final proof comes from the documented quality gates and E2E demo
@@ -62,13 +75,13 @@ function DashboardCard({
   linkLabel: string;
 }) {
   return (
-    <article className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <article className="ops-panel p-6">
       <h2 className="text-lg font-semibold">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {description}
       </p>
       <Link
-        className="mt-5 inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
+        className="ops-button-primary mt-5"
         href={href}
       >
         {linkLabel}

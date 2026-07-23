@@ -84,9 +84,9 @@ export function WorkflowCreateForm() {
   const isSubmitting = submitState.status === "submitting";
 
   return (
-    <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <section className="ops-panel p-6">
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="ops-kicker">
           Procurement quotation
         </p>
         <h2 className="text-2xl font-semibold tracking-tight">
@@ -103,7 +103,7 @@ export function WorkflowCreateForm() {
         <label className="grid gap-2 text-sm font-medium">
           Domain
           <input
-            className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            className="ops-input px-3 py-2"
             name="domain"
             defaultValue={DEFAULT_DOMAIN}
             placeholder="it_equipment"
@@ -113,7 +113,7 @@ export function WorkflowCreateForm() {
         <label className="grid gap-2 text-sm font-medium">
           Customer name
           <input
-            className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            className="ops-input px-3 py-2"
             name="customerName"
             placeholder="Acme Manufacturing Group"
           />
@@ -122,7 +122,7 @@ export function WorkflowCreateForm() {
         <label className="grid gap-2 text-sm font-medium">
           Request text
           <textarea
-            className="min-h-32 rounded-md border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-ring"
+            className="ops-input min-h-32 px-3 py-2 leading-6"
             name="rawText"
             placeholder="We would like to purchase 50 standard business laptops..."
             required
@@ -132,7 +132,7 @@ export function WorkflowCreateForm() {
         <label className="grid gap-2 text-sm font-medium">
           Items JSON
           <textarea
-            className="min-h-36 rounded-md border bg-background px-3 py-2 font-mono text-xs leading-5 outline-none focus:border-ring"
+            className="ops-input min-h-36 px-3 py-2 font-mono text-xs leading-5"
             name="itemsJson"
             defaultValue={DEFAULT_ITEMS_JSON}
           />
@@ -141,15 +141,15 @@ export function WorkflowCreateForm() {
         <label className="grid gap-2 text-sm font-medium">
           Metadata JSON
           <textarea
-            className="min-h-32 rounded-md border bg-background px-3 py-2 font-mono text-xs leading-5 outline-none focus:border-ring"
+            className="ops-input min-h-32 px-3 py-2 font-mono text-xs leading-5"
             name="metadataJson"
             defaultValue={DEFAULT_METADATA_JSON}
           />
         </label>
 
-        <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center">
           <button
-            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className="ops-button-primary"
             disabled={isSubmitting}
             type="submit"
           >
@@ -162,7 +162,7 @@ export function WorkflowCreateForm() {
       </form>
 
       {submitState.status === "success" ? (
-        <div className="mt-5 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+        <div className="mt-5 rounded-md border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200">
           <p className="font-semibold">Workflow created.</p>
           <p className="mt-1 break-all">
             Status: {submitState.workflow.status} / ID:{" "}

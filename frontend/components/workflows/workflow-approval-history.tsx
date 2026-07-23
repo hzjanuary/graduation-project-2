@@ -8,9 +8,9 @@ export function WorkflowApprovalHistory({
   history,
 }: WorkflowApprovalHistoryProps) {
   return (
-    <section className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
+    <section className="ops-panel p-5">
       <div>
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="ops-kicker">
           Human approval
         </p>
         <h2 className="mt-1 text-lg font-semibold">Approval history</h2>
@@ -36,7 +36,7 @@ export function WorkflowApprovalHistory({
 
 function ApprovalHistoryItem({ approval }: { approval: ApprovalRecord }) {
   return (
-    <li className="rounded-md border bg-background p-3">
+    <li className="rounded-md border border-border/70 bg-background/55 p-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-medium">

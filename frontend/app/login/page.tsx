@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 
-import { ApiClientError } from "@/lib/api/client";
 import { login } from "@/lib/api/auth";
+import { ApiClientError } from "@/lib/api/client";
 import { setSessionTokens } from "@/lib/auth/session";
 import { localDemoAccounts } from "@/lib/demo";
 
@@ -42,22 +42,23 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <section className="mx-auto grid min-h-screen w-full max-w-5xl gap-8 px-6 py-16 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center">
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-muted-foreground">
-            Enterprise Multi-Agent OS
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Sign in
-          </h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Use the local-demo Manager account for the main evaluator flow.
-            These credentials are for local-demo and board-demo use only, not
-            production secrets.
-          </p>
+    <main className="ops-page">
+      <section className="mx-auto grid min-h-screen w-full max-w-6xl gap-8 px-5 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(340px,460px)] lg:items-center lg:px-8">
+        <div className="flex flex-col gap-6">
+          <div>
+            <p className="ops-kicker">Controlled access portal</p>
+            <h1 className="mt-5 text-4xl font-semibold tracking-tight text-foreground md:text-6xl">
+              Sign in to the operations console.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
+              This is not a chatbot. Use the local-demo Manager account to
+              operate the deterministic workflow, inspect agent activity, and
+              approve before resume.
+            </p>
+          </div>
+          <LifecycleStrip />
           <button
-            className="mt-3 inline-flex h-10 w-fit items-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
+            className="ops-button-secondary w-fit"
             onClick={fillManagerAccount}
             type="button"
           >
@@ -67,13 +68,17 @@ export default function LoginPage() {
 
         <div className="grid gap-5">
           <form
-            className="flex flex-col gap-4 rounded-lg border bg-card p-6 text-card-foreground shadow-sm"
+            className="ops-panel-strong flex flex-col gap-4 p-6"
             onSubmit={handleSubmit}
           >
+            <div>
+              <p className="ops-kicker">Local demo session</p>
+              <h2 className="mt-2 text-xl font-semibold">Login</h2>
+            </div>
             <label className="flex flex-col gap-2 text-sm font-medium">
               Email
               <input
-                className="h-10 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring"
+                className="ops-input h-11"
                 type="email"
                 autoComplete="email"
                 value={email}
@@ -84,7 +89,7 @@ export default function LoginPage() {
             <label className="flex flex-col gap-2 text-sm font-medium">
               Password
               <input
-                className="h-10 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring"
+                className="ops-input h-11"
                 type="password"
                 autoComplete="current-password"
                 value={password}
@@ -93,44 +98,44 @@ export default function LoginPage() {
               />
             </label>
             <button
-              className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="ops-button-primary"
               type="submit"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
             {error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <p
+                className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                role="alert"
+              >
                 {error}
               </p>
             ) : null}
             {isSignedIn ? (
               <p className="text-sm text-muted-foreground" role="status">
                 Signed in.{" "}
-                <Link
-                  className="font-medium text-primary underline"
-                  href="/dashboard"
-                >
+                <Link className="font-medium text-primary underline" href="/dashboard">
                   Open the dashboard.
                 </Link>
               </p>
             ) : null}
           </form>
 
-          <section className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
+          <section className="ops-panel p-5">
             <h2 className="text-base font-semibold">Local demo accounts</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Use Manager for the main demo. These accounts come from the demo
               seed and must not be reused as production accounts.
             </p>
-            <div className="mt-4 grid gap-3">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {localDemoAccounts.map((account) => (
-                <div className="rounded-md border bg-background p-3" key={account.email}>
+                <div className="ops-panel-muted p-3" key={account.email}>
                   <p className="text-sm font-semibold">{account.role}</p>
                   <p className="mt-1 break-all text-sm text-muted-foreground">
                     {account.email}
                   </p>
-                  <p className="mt-1 break-all text-sm text-muted-foreground">
+                  <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
                     {account.password}
                   </p>
                 </div>
@@ -140,6 +145,21 @@ export default function LoginPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function LifecycleStrip() {
+  return (
+    <div className="ops-panel grid gap-3 p-4 sm:grid-cols-4">
+      {["Run", "WAITING_APPROVAL", "Approve", "Resume"].map((step) => (
+        <div
+          className="rounded-md border border-border/70 bg-background/50 px-3 py-2 text-center text-xs font-semibold text-muted-foreground"
+          key={step}
+        >
+          {step}
+        </div>
+      ))}
+    </div>
   );
 }
 

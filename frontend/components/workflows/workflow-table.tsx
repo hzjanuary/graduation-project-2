@@ -10,7 +10,7 @@ interface WorkflowTableProps {
 export function WorkflowTable({ workflows }: WorkflowTableProps) {
   if (workflows.length === 0) {
     return (
-      <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+      <div className="ops-panel p-6">
         <h2 className="text-base font-semibold">No workflows yet</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Workflow records from the backend will appear here after they are
@@ -21,10 +21,10 @@ export function WorkflowTable({ workflows }: WorkflowTableProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm">
+    <div className="ops-table">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-sm">
-          <thead className="border-b bg-muted/60 text-xs uppercase text-muted-foreground">
+          <thead className="border-b border-border/70 bg-muted/50 text-xs uppercase tracking-[0.12em] text-muted-foreground">
             <tr>
               <th className="px-4 py-3 font-medium">Workflow</th>
               <th className="px-4 py-3 font-medium">Type / Domain</th>
@@ -34,9 +34,9 @@ export function WorkflowTable({ workflows }: WorkflowTableProps) {
               <th className="px-4 py-3 font-medium">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border/60">
             {workflows.map((workflow) => (
-              <tr key={workflow.workflow_id}>
+              <tr className="ops-table-row" key={workflow.workflow_id}>
                 <td className="px-4 py-4 font-medium">
                   {shortWorkflowId(workflow.workflow_id)}
                 </td>
@@ -54,12 +54,20 @@ export function WorkflowTable({ workflows }: WorkflowTableProps) {
                   {formatDate(workflow.updated_at ?? workflow.created_at)}
                 </td>
                 <td className="px-4 py-4">
-                  <Link
-                    className="text-sm font-medium text-primary hover:underline"
-                    href={`/workflows/${workflow.workflow_id}`}
-                  >
-                    View detail
-                  </Link>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      className="text-sm font-semibold text-primary hover:underline"
+                      href={`/workflows/${workflow.workflow_id}`}
+                    >
+                      View detail
+                    </Link>
+                    <Link
+                      className="text-sm font-semibold text-sky-300 hover:underline"
+                      href={`/agent-monitor?workflowId=${workflow.workflow_id}`}
+                    >
+                      Monitor
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

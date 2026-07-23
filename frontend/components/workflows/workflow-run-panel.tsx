@@ -54,10 +54,10 @@ export function WorkflowRunPanel({
   const isRunning = runState.status === "running";
 
   return (
-    <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <section className="ops-panel p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="ops-kicker">
             Runtime action
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight">
@@ -69,7 +69,7 @@ export function WorkflowRunPanel({
         </div>
         {guidance.canRun ? (
           <button
-            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className="ops-button-primary"
             disabled={isRunning}
             onClick={handleRun}
             type="button"
@@ -77,7 +77,7 @@ export function WorkflowRunPanel({
             {isRunning ? "Running..." : "Run workflow"}
           </button>
         ) : (
-          <span className="inline-flex min-h-10 items-center rounded-md border px-4 text-sm font-medium text-muted-foreground">
+          <span className="ops-chip min-h-10 px-4">
             {guidance.actionLabel}
           </span>
         )}
@@ -154,7 +154,7 @@ function runGuidance(status: WorkflowState["status"]): {
 
 function RuntimeResult({ response }: { response: WorkflowRunResponse }) {
   return (
-    <div className="mt-5 grid gap-4 rounded-md border bg-muted/50 p-4">
+    <div className="ops-panel-muted mt-5 grid gap-4 p-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <ResultItem label="Status" value={response.status} />
         <ResultItem

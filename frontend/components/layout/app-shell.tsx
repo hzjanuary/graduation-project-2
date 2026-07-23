@@ -22,29 +22,31 @@ export function AppShell({ title, description, children }: AppShellProps) {
 
   if (hasSession === null) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-6">
-        <p className="text-sm text-muted-foreground">Checking session...</p>
+      <main className="ops-page flex items-center justify-center px-6">
+        <div className="ops-panel px-6 py-5">
+          <p className="ops-kicker">Session check</p>
+          <p className="mt-2 text-sm text-muted-foreground">Checking session...</p>
+        </div>
       </main>
     );
   }
 
   if (!hasSession) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-6">
-        <section className="w-full max-w-md rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
-          <p className="text-sm font-medium text-muted-foreground">
+      <main className="ops-page flex items-center justify-center px-6">
+        <section className="ops-panel-strong w-full max-w-md p-6">
+          <p className="ops-kicker">
             Login required
           </p>
           <h1 className="mt-3 text-2xl font-semibold tracking-tight">
             Sign in to open the workflow dashboard.
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            The dashboard shell uses the local development MVP session from the
-            login page. Sign in to load workflow views that are available for
-            this SPEC-009 slice.
+            The console uses the local demo session from the login page. Sign
+            in to load workflow, agent monitor, approval, and evidence views.
           </p>
           <Link
-            className="mt-5 inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-95"
+            className="ops-button-primary mt-5"
             href="/login"
           >
             Go to login
@@ -55,11 +57,11 @@ export function AppShell({ title, description, children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 md:flex">
+    <div className="ops-page md:flex">
       <Sidebar />
       <div className="min-w-0 flex-1">
         <Header title={title} description={description} />
-        <main className="px-6 py-6">{children}</main>
+        <main className="px-4 py-5 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

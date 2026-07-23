@@ -18,10 +18,10 @@ export function Header({ title, description }: HeaderProps) {
   }
 
   return (
-    <header className="border-b bg-background px-6 py-5">
+    <header className="border-b border-border/70 bg-background/70 px-4 py-5 backdrop-blur sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
             {title}
           </h1>
           {description ? (
@@ -31,11 +31,11 @@ export function Header({ title, description }: HeaderProps) {
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">
+          <div className="ops-chip">
             Local session
           </div>
           <button
-            className="h-9 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"
+            className="ops-button-secondary min-h-9 px-3"
             type="button"
             onClick={handleLogout}
           >

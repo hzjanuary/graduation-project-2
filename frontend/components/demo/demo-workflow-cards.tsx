@@ -11,17 +11,17 @@ export function DemoWorkflowCards({ compact = false }: DemoWorkflowCardsProps) {
     <div className="grid gap-4 lg:grid-cols-4">
       {demoWorkflows.map((workflow) => (
         <Link
-          className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm transition hover:border-primary/60 hover:bg-muted/30"
+          className="ops-card-link group p-5"
           href={`/workflows/${workflow.workflowId}`}
           key={workflow.workflowId}
         >
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="ops-kicker">
             {workflow.title}
           </p>
           <h3 className="mt-2 text-base font-semibold">
             {workflow.shortTitle}
           </h3>
-          <p className="mt-2 text-xs font-medium text-primary">
+          <p className="mt-2 inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
             {workflow.status}
           </p>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">

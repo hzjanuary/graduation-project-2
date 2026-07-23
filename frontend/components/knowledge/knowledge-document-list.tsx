@@ -41,9 +41,9 @@ export function KnowledgeDocumentList({ token }: KnowledgeDocumentListProps) {
   }, [token]);
 
   return (
-    <section className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
+    <section className="ops-panel p-5">
       <div>
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="ops-kicker">
           Knowledge catalog
         </p>
         <h2 className="mt-1 text-lg font-semibold">Demo documents</h2>
@@ -84,7 +84,7 @@ export function KnowledgeDocumentList({ token }: KnowledgeDocumentListProps) {
 
 function DocumentItem({ document }: { document: KnowledgeDocumentCatalogItem }) {
   return (
-    <li className="rounded-md border bg-background p-4">
+    <li className="rounded-md border border-border/70 bg-background/55 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="break-words text-sm font-semibold">{document.title}</p>
@@ -94,7 +94,7 @@ function DocumentItem({ document }: { document: KnowledgeDocumentCatalogItem }) 
           </p>
         </div>
         {document.effective_date ? (
-          <span className="inline-flex w-fit rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+          <span className="ops-chip">
             Effective {document.effective_date}
           </span>
         ) : null}
@@ -103,7 +103,7 @@ function DocumentItem({ document }: { document: KnowledgeDocumentCatalogItem }) 
         <span className="break-all">ID: {document.document_id}</span>
         {document.owner_team ? <span>Owner: {document.owner_team}</span> : null}
         {document.tags.map((tag) => (
-          <span className="rounded-full border px-2 py-0.5" key={tag}>
+          <span className="rounded-full border border-border/70 px-2 py-0.5" key={tag}>
             {tag}
           </span>
         ))}

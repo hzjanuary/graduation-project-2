@@ -8,10 +8,10 @@ export function WorkflowNextStepGuide({ status }: WorkflowNextStepGuideProps) {
   const guide = nextStepGuide(status);
 
   return (
-    <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <section className="ops-panel-strong p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="ops-kicker">
             What should I do next?
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight">
@@ -21,11 +21,11 @@ export function WorkflowNextStepGuide({ status }: WorkflowNextStepGuideProps) {
             {guide.description}
           </p>
         </div>
-        <span className="inline-flex w-fit rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground">
+        <span className="ops-chip">
           {status}
         </span>
       </div>
-      <div className="mt-5 rounded-md border bg-muted/40 p-4">
+      <div className="ops-panel-muted mt-5 p-4">
         <p className="text-sm font-semibold">Primary next action</p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           {guide.action}

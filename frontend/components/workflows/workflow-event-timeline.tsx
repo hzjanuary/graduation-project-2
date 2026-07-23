@@ -30,10 +30,10 @@ export function WorkflowEventTimeline({
   );
 
   return (
-    <section className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
+    <section className="ops-panel p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="ops-kicker">
             Live monitoring
           </p>
           <h2 className="mt-1 text-lg font-semibold">Event timeline</h2>
@@ -45,7 +45,7 @@ export function WorkflowEventTimeline({
         <div className="flex items-center gap-3">
           <ConnectionBadge status={status} />
           <button
-            className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium hover:bg-muted"
+            className="ops-button-secondary min-h-9 px-3"
             onClick={reconnect}
             type="button"
           >
@@ -88,7 +88,7 @@ function ConnectionBadge({
   }[status];
 
   return (
-    <span className="inline-flex h-9 items-center rounded-full border px-3 text-xs font-medium text-muted-foreground">
+    <span className="ops-chip min-h-9">
       {label}
     </span>
   );
@@ -98,7 +98,7 @@ function TimelineItem({ event }: { event: WorkflowTimelineEvent }) {
   const payloadPreview = safePayloadPreview(event.payload);
 
   return (
-    <li className="rounded-md border bg-background p-3">
+    <li className="relative rounded-md border border-border/70 bg-background/55 p-3 pl-5 before:absolute before:left-2 before:top-4 before:h-2 before:w-2 before:rounded-full before:bg-primary before:shadow-[0_0_14px_hsl(var(--primary)/0.55)]">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium">{event.event_type}</p>
@@ -118,7 +118,7 @@ function TimelineItem({ event }: { event: WorkflowTimelineEvent }) {
         {event.status ? <span>Status: {event.status}</span> : null}
       </div>
       {payloadPreview ? (
-        <pre className="mt-3 max-h-40 overflow-auto rounded-md bg-muted p-3 text-xs leading-5 text-muted-foreground">
+        <pre className="ops-code mt-3 max-h-40">
           {payloadPreview}
         </pre>
       ) : null}

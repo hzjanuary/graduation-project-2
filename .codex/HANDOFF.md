@@ -23,6 +23,44 @@ Current active spec:
 
 - SPEC-015 Final Evaluation, Demo Validation, and Graduation Report Assets - closed / final-graduation-ready
 
+## Current SPEC-017 Frontend Visual Redesign State
+
+Scope:
+
+- Implemented the approved "Violet Operations Console" frontend redesign and
+  post-demo README refresh.
+- Frontend UI and README only; no backend code, backend API contracts,
+  database models/migrations, Docker/Compose behavior, CI behavior, Telegram
+  bridge behavior, workflow runtime behavior, auth behavior, seeded workflow
+  semantics, approval/resume semantics, or event streaming semantics changed.
+
+Implemented:
+
+- Added a dark enterprise operations visual system in `frontend/app/globals.css`
+  with near-black canvas, violet surfaces, restrained blue/violet accents,
+  high-contrast text, status tokens, operational panels, tables, chips, and
+  action styles.
+- Redesigned the shell/sidebar/header around "Multi-Agent OS" with Demo
+  Command and Agent Monitor as primary navigation.
+- Refreshed `/`, `/login`, `/dashboard`, `/demo`, `/agent-monitor`,
+  `/workflows`, and workflow detail surfaces for defense-demo operation.
+- Made Agent Monitor and workflow detail pages emphasize real workflow state,
+  next human action, agent activity, timeline evidence, approval/resume, and
+  safe no-key operation without fake metrics or fabricated evidence.
+- Rewrote `README.md` for the post-demo state, including Telegram + optional
+  Ollama extraction, deterministic backend runtime, Agent Monitor,
+  approval/resume, safety boundaries, quick start, and roadmap.
+- Updated frontend tests for changed labels/copy.
+
+Validation:
+
+- Frontend lint, build, typecheck, test suite, and `scripts/ci/frontend-gate.sh`
+  passed.
+- Compose config and production-demo compose config passed.
+- `scripts/final/final-quality-gate.sh --help` and `git diff --check` passed.
+- Browser screenshot verification was not run because no browser controller or
+  Playwright dependency was available in the current environment.
+
 ## Current Final Live Demo Freeze State
 
 Scope:

@@ -7,24 +7,32 @@ const terminalStatuses = new Set<WorkflowStatus>([
   "CANCELLED",
   "REJECTED",
 ]);
+const runningStatuses: WorkflowStatus[] = [
+  "PLANNING",
+  "RETRIEVING",
+  "CALCULATING",
+  "CHECKING_COMPLIANCE",
+  "VALIDATING",
+  "GENERATING_EMAIL",
+];
 
 interface WorkflowStatusBadgeProps {
   status: WorkflowStatus;
 }
 
 export function WorkflowStatusBadge({ status }: WorkflowStatusBadgeProps) {
-  const isTerminal = terminalStatuses.has(status);
-  const isWaiting = status === "WAITING_APPROVAL";
-
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center rounded-md border px-2 py-1 text-xs font-medium",
-        isTerminal && "border-muted-foreground/30 bg-muted text-muted-foreground",
-        isWaiting && "border-primary/30 bg-primary/10 text-primary",
-        !isTerminal &&
-          !isWaiting &&
-          "border-emerald-500/30 bg-emerald-50 text-emerald-700",
+        "inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold",
+        status === "CREATED" && "ops-status-created",
+        runningStatuses.includes(status) && "ops-status-running",
+        status === "WAITING_APPROVAL" && "ops-status-waiting",
+        status === "APPROVED" && "ops-status-approved",
+        status === "COMPLETED" && "ops-status-completed",
+        terminalStatuses.has(status) &&
+          status !== "COMPLETED" &&
+          "ops-status-danger",
       )}
     >
       {status.replaceAll("_", " ")}
