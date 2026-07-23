@@ -4,11 +4,12 @@ from collections.abc import AsyncIterator
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.db import create_database_engine, create_session_factory
-from app.models import User
+from app.models import User, user_roles
 from app.repositories import BaseRepository, CRUDRepository
 
 
@@ -82,6 +83,9 @@ async def test_crud_repository_list_limit_and_offset(
     db_session: AsyncSession,
 ) -> None:
     repository = CRUDRepository(db_session, User)
+    await db_session.execute(delete(user_roles))
+    await db_session.execute(delete(User))
+
     first_user = repository.add(build_user())
     second_user = repository.add(build_user())
     await db_session.flush()

@@ -38,6 +38,8 @@ git status --short
 
 ### TASK 016.5 - External Price Research Tool Interface And Schemas
 
+Status: Implemented.
+
 Goal: Add provider-independent backend contracts for reference price research
 without calling real web providers.
 
@@ -53,6 +55,19 @@ Scope:
 - Add validation tests for bounds, required fields, and no-secret/no-raw-payload
   behavior.
 - Do not connect to external web search or pricing providers yet.
+
+Implemented foundation:
+
+- Added backend `app.price_research` package with safe request/result/source
+  schemas, async provider protocol, typed exceptions, and disabled-by-default
+  service shell.
+- Added safe price research settings with disabled default and no required API
+  keys.
+- Added focused backend tests for schema validation, source index validation,
+  final quote rejection, provider protocol behavior, disabled service behavior,
+  and settings defaults.
+- No web provider, workflow runtime integration, Telegram integration, API
+  endpoint, database model, or migration was added.
 
 Acceptance criteria:
 
@@ -74,6 +89,8 @@ git diff --check
 
 ### TASK 016.6 - Fake/Manual Price Research Provider And Tests
 
+Status: Implemented.
+
 Goal: Add a deterministic fake/manual provider for reference price evidence so
 the workflow can be tested without web access.
 
@@ -86,6 +103,22 @@ Scope:
 - Add tests for disabled mode, fake/manual provider output, warnings, timeouts,
   and no fabricated prices when data is missing.
 - Do not call external network.
+
+Implemented foundation:
+
+- Added `FakePriceResearchProvider` with deterministic demo reference evidence
+  for `Standard business laptop` and safe no-match warnings for unknown items.
+- Added `ManualPriceResearchProvider` that returns no prices unless explicit
+  constructor data is supplied.
+- Added `get_price_research_provider()` for `fake` and `manual` provider
+  selection only.
+- Updated `PriceResearchService` to remain disabled by default and delegate to
+  either an explicit provider object or the supported no-network provider
+  factory when enabled.
+- Added tests proving no network calls, no final quote flag, no stock/delivery
+  claims, safe warnings, factory behavior, and service delegation.
+- No real web provider, workflow runtime integration, Telegram integration,
+  API endpoint, database model, or migration was added.
 
 Acceptance criteria:
 

@@ -27,10 +27,13 @@ Current active spec:
 
 Scope:
 
-- Documentation/specification only. No backend behavior, frontend behavior,
-  Telegram bridge behavior, API contracts, database migrations/models,
-  Docker/Compose behavior, CI behavior, real web search, price lookup, fake
-  evidence, or secrets changed.
+- SPEC-016 is active as a post-demo roadmap for Conversational Sales Agent and
+  External Price Research.
+- Current implementation includes backend schemas/interfaces/settings/tests for
+  reference price research only. No frontend behavior, Telegram bridge
+  behavior, workflow runtime integration, API endpoints, database
+  migrations/models, Docker/Compose behavior, CI behavior, real web search,
+  price lookup, fake evidence, or secrets changed.
 
 Implemented:
 
@@ -43,15 +46,42 @@ Implemented:
   Conversational Sales Agent roadmap with future provider-independent external
   reference price research, internal catalog/RAG evidence, deterministic
   normalization, human approval, and sales reply boundaries.
+- Implemented TASK 016.5 foundation:
+  - `backend/app/price_research/schemas.py`
+  - `backend/app/price_research/providers.py`
+  - `backend/app/price_research/service.py`
+  - `backend/app/price_research/exceptions.py`
+  - `backend/app/price_research/__init__.py`
+  - `backend/app/tests/test_price_research_schemas.py`
+  - `backend/app/tests/test_price_research_provider_interface.py`
+  - safe disabled-by-default price research settings in
+    `backend/app/config/settings.py`
+- Implemented TASK 016.6 foundation:
+  - `backend/app/price_research/fake_provider.py`
+  - `backend/app/price_research/manual_provider.py`
+  - provider factory for `fake` and `manual` only
+  - service delegation to explicit provider or supported no-network provider
+    name when enabled
+  - tests for deterministic fake output, manual no-data/manual fixture output,
+    provider factory behavior, service delegation, no network calls, and no
+    stock/delivery/final-quote claims
 
 Safety:
 
 - Future external price research is explicitly feature-flagged and labeled as
   reference evidence, not final quote.
-- SPEC-016 keeps deterministic fallback, no raw prompts/provider payloads,
-  no chain-of-thought, no unsupported silent item dropping, no fake prices,
-  no stock/delivery promises, no auto-approval, no auto-resume, and no real
-  email as acceptance boundaries.
+- TASK 016.5 service is disabled by default and requires an explicit provider
+  object before delegating.
+- Price research schemas reject `is_final_quote=true`, require source indexes
+  to reference existing sources, allow empty reference prices only with
+  warnings, and keep context metadata bounded and free of sensitive keys.
+- Fake/manual providers perform no external network calls. Fake results are
+  deterministic demo reference evidence and manual results require explicit
+  constructor data before returning prices.
+- SPEC-016 keeps deterministic fallback, no raw prompts/provider payloads, no
+  chain-of-thought, no unsupported silent item dropping, no fake prices, no
+  stock/delivery promises, no auto-approval, no auto-resume, and no real email
+  as acceptance boundaries.
 
 ## Current SPEC-017 Frontend Visual Redesign State
 

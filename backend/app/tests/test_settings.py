@@ -30,6 +30,12 @@ def test_settings_load_default_development_values() -> None:
     assert settings.llm_timeout_seconds == 30
     assert settings.llm_max_retries == 2
     assert settings.ollama_base_url == "http://localhost:11434"
+    assert settings.price_research_enabled is False
+    assert settings.price_research_provider == "fake"
+    assert settings.price_research_timeout_seconds == 30
+    assert settings.price_research_max_sources == 5
+    assert settings.price_research_default_region == "VN"
+    assert settings.price_research_default_currency == "VND"
     assert settings.readiness_timeout_seconds == 2.0
 
 
@@ -74,6 +80,12 @@ def test_settings_can_be_overridden_by_environment(
     monkeypatch.setenv("GEMINI_MODEL", "gemini-model")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://ollama:11434")
     monkeypatch.setenv("OLLAMA_MODEL", "ollama-model")
+    monkeypatch.setenv("PRICE_RESEARCH_ENABLED", "true")
+    monkeypatch.setenv("PRICE_RESEARCH_PROVIDER", "MANUAL")
+    monkeypatch.setenv("PRICE_RESEARCH_TIMEOUT_SECONDS", "12")
+    monkeypatch.setenv("PRICE_RESEARCH_MAX_SOURCES", "3")
+    monkeypatch.setenv("PRICE_RESEARCH_DEFAULT_REGION", "vn")
+    monkeypatch.setenv("PRICE_RESEARCH_DEFAULT_CURRENCY", "usd")
     monkeypatch.setenv("READINESS_TIMEOUT_SECONDS", "5.5")
 
     settings = Settings()
@@ -116,6 +128,12 @@ def test_settings_can_be_overridden_by_environment(
     assert settings.gemini_model == "gemini-model"
     assert settings.ollama_base_url == "http://ollama:11434"
     assert settings.ollama_model == "ollama-model"
+    assert settings.price_research_enabled is True
+    assert settings.price_research_provider == "manual"
+    assert settings.price_research_timeout_seconds == 12
+    assert settings.price_research_max_sources == 3
+    assert settings.price_research_default_region == "VN"
+    assert settings.price_research_default_currency == "USD"
     assert settings.readiness_timeout_seconds == 5.5
 
 

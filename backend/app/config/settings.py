@@ -157,6 +157,40 @@ class Settings(BaseSettings):
         le=10000,
         alias="RAG_EVENT_PAYLOAD_MAX_CHARS",
     )
+    price_research_enabled: bool = Field(
+        default=False,
+        alias="PRICE_RESEARCH_ENABLED",
+    )
+    price_research_provider: str = Field(
+        default="fake",
+        min_length=1,
+        max_length=80,
+        alias="PRICE_RESEARCH_PROVIDER",
+    )
+    price_research_timeout_seconds: int = Field(
+        default=30,
+        ge=1,
+        le=120,
+        alias="PRICE_RESEARCH_TIMEOUT_SECONDS",
+    )
+    price_research_max_sources: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        alias="PRICE_RESEARCH_MAX_SOURCES",
+    )
+    price_research_default_region: str = Field(
+        default="VN",
+        min_length=1,
+        max_length=120,
+        alias="PRICE_RESEARCH_DEFAULT_REGION",
+    )
+    price_research_default_currency: str = Field(
+        default="VND",
+        min_length=3,
+        max_length=3,
+        alias="PRICE_RESEARCH_DEFAULT_CURRENCY",
+    )
     readiness_timeout_seconds: float = Field(
         default=2.0,
         ge=0.1,
@@ -235,6 +269,24 @@ class Settings(BaseSettings):
     def normalize_embedding_provider(cls, value: str) -> str:
         """Normalize embedding provider names loaded from environment variables."""
         return value.lower()
+
+    @field_validator("price_research_provider", mode="before")
+    @classmethod
+    def normalize_price_research_provider(cls, value: str) -> str:
+        """Normalize price research provider names loaded from environment."""
+        return str(value).strip().lower()
+
+    @field_validator("price_research_default_region", mode="before")
+    @classmethod
+    def normalize_price_research_region(cls, value: str) -> str:
+        """Normalize default price research region."""
+        return str(value).strip().upper()
+
+    @field_validator("price_research_default_currency", mode="before")
+    @classmethod
+    def normalize_price_research_currency(cls, value: str) -> str:
+        """Normalize default price research currency."""
+        return str(value).strip().upper()
 
 
 @lru_cache
