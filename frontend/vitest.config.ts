@@ -4,10 +4,6 @@ import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   plugins: [react()],
-  esbuild: {
-    jsx: "automatic",
-    jsxImportSource: "react",
-  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL(".", import.meta.url)),
